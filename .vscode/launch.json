@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            // CHANGE TYPE: Switch from "chrome" (which forces a browser) to "node" (which just runs the task).
+            "type": "node",
+            "request": "launch",
+            "name": "Automated React Launch (Conditional)",
+            "program": "${workspaceFolder}/auto-start.ps1", // This is technically where the "run" happens
+            "console": "integratedTerminal",
+            // The preLaunchTask is still necessary, but "node" is the cleaner wrapper.
+            "preLaunchTask": "Automated Project Setup and Start"
+        }
+    ]
+}

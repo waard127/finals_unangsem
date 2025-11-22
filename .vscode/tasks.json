@@ -1,0 +1,17 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Automated Project Setup and Start",
+            "type": "shell",
+            // This command executes the PowerShell script, bypassing the execution policy only for this file.
+            "command": "powershell -ExecutionPolicy Bypass -File \"${workspaceFolder}/auto-start.ps1\"",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        }
+    ]
+}

@@ -7,6 +7,10 @@ import ReportsLayout from './components/assets/Reports/ReportsLayout.jsx';
 import ProfileLayout from './components/assets/Profile/ProfileLayout.jsx'; 
 import './App.css';
 
+// --- NEW IMPORT: Loading Animation Component ---
+import LoadingAnimation from './components/assets/LoadingAnimation/LoadingAnimation.jsx'; 
+// --------------------------------------------- 
+
 // --- IMPORTS for Profile Data Fetching in App.js ---
 import { auth, db } from './apiService'; 
 import { onAuthStateChanged } from 'firebase/auth';
@@ -15,10 +19,18 @@ import { doc, getDoc } from 'firebase/firestore';
 
 const App = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    // State to track the current view
     const [currentPage, setCurrentPage] = useState('dashboard'); 
-    // State to store pre-loaded profile data (null initially to indicate loading)
     const [profileData, setProfileData] = useState(null); 
+    
+    // NEW STATE: True when the 30s timer is complete, triggers final animation phase
+    const [isDataReady, setIsDataReady] = useState(false); 
+    
+    // NEW STATE: True only after the final 2s exit animation is done, triggers dashboard mount
+    const [showMainContent, setShowMainContent] = useState(false); 
+    
+    // Ref to hold data once fetched (regardless of the timer)
+    const dataRef = React.useRef(null);
+
 
     const handleLoginSuccess = () => {
         setIsLoggedIn(true);
@@ -26,50 +38,46 @@ const App = () => {
 
     const handleLogout = () => {
         setIsLoggedIn(false);
-        setProfileData(null); // Clear data on logout
+        setProfileData(null); 
+        // Reset flags on logout
+        setIsDataReady(false);
+        setShowMainContent(false); 
         setCurrentPage('dashboard');
     };
 
-    // --- EFFECT: Fetch user profile data once upon successful login (Data Pre-loading) ---
+    // --- EFFECT: Handle Data Loading and 30s Timer ---
     useEffect(() => {
         if (!isLoggedIn) return;
 
-        // Listener for Firebase Auth state changes
+        // 1. Start Firebase Auth Listener and Data Fetch (The REAL Loading)
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            // Only fetch if a user is logged in and profile data hasn't been fetched yet
             if (user && !profileData) { 
                 try {
                     const docRef = doc(db, "users", user.uid);
                     const docSnap = await getDoc(docRef);
-
-                    // Determine the photo URL, using Firebase Auth's photoURL if available
-                    const photoURL = user.photoURL || null; 
-                    
-                    // --- DEBUG LOG: Crucial for diagnosing the photo issue ---
-                    console.log("--- Profile Data Fetch Debug ---");
-                    console.log("Firebase User Photo URL:", user.photoURL);
-                    console.log("Is photoURL null/empty:", !photoURL);
-                    console.log("----------------------------------");
-                    // --------------------------------------------------------
-
                     const data = docSnap.exists() ? docSnap.data() : {};
                     
-                    setProfileData({
+                    const fetchedData = {
                         uid: user.uid,
                         displayName: user.displayName || data.fullName || 'User Name',
                         email: user.email,
                         role: data.role || 'Administrator',
-                        photoURL: photoURL, // Added: Photo URL from Firebase Auth
+                        photoURL: user.photoURL || null,
                         stats: data.stats || {
                             reportsGenerated: 45, 
                             totalSystemUsers: 540,
                             activeSectionsManaged: 12
                         },
                         id: data.employeeId || `SCH-${user.uid.substring(0, 5).toUpperCase()}` 
-                    });
+                    };
+                    
+                    // Store the data in a ref once fetched, but don't update state yet.
+                    dataRef.current = fetchedData; 
+                    
                 } catch (error) {
                     console.error("Error fetching profile data:", error);
-                    setProfileData({
+                    // Store fallback data on error
+                    dataRef.current = { 
                         uid: auth.currentUser?.uid || 'N/A',
                         displayName: auth.currentUser?.displayName || 'Error User',
                         email: auth.currentUser?.email || 'N/A',
@@ -77,33 +85,54 @@ const App = () => {
                         photoURL: null,
                         stats: { reportsGenerated: 0, totalSystemUsers: 0, activeSectionsManaged: 0 },
                         id: 'SCH-0000'
-                    });
+                    };
                 }
             }
-            // Set initial page once login and initial data load attempt is complete
-            setCurrentPage('dashboard');
         });
+        
+        // 2. Start 30-Second Loading Timer (The SIMULATED Loading)
+        const animationTimer = setTimeout(() => {
+            // Once 30 seconds is up:
+            
+            // A. Set the state to trigger the final run-off animation (isDataReady = true)
+            setIsDataReady(true);
 
-        return () => unsubscribe();
-    }, [isLoggedIn, profileData]);
+            // B. Set the profileData state with the fetched or fallback data
+            setProfileData(dataRef.current);
+            
+            // C. Start the 2-second delay to unmount the animation and show the Dashboard
+            // This ensures the animation has time to run off screen.
+            setTimeout(() => {
+                setShowMainContent(true);
+                setCurrentPage('dashboard');
+            }, 2000); // 2000ms delay for the exit animation
+            
+        }, 30000); // 30000ms = 30 seconds
+
+        // Cleanup function
+        return () => {
+            clearTimeout(animationTimer);
+            unsubscribe();
+        };
+
+    }, [isLoggedIn]);
     // ---------------------------------------------------------------------
 
-    // Function to switch the main content view
     const handlePageChange = (page) => {
         setCurrentPage(page);
     };
 
     const renderMainContent = () => {
-        // Show Loading Indicator while initial data loads
-        if (isLoggedIn && !profileData) {
-             return <div style={{padding: '50px', textAlign: 'center', fontSize: '1.5rem', fontFamily: 'Inter'}}>Loading Dashboard and Profile Data...</div>;
+        // Render LoadingAnimation if logged in AND showMainContent is still FALSE
+        // We pass isDataReady to trigger the final animation phase at 30 seconds.
+        if (isLoggedIn && !showMainContent) {
+             return <LoadingAnimation isDataReady={isDataReady} />;
         }
 
         switch (currentPage) {
             case 'reports':
                 return <ReportsLayout onLogout={handleLogout} onPageChange={handlePageChange} />;
             case 'profile':
-                // PASS PRE-LOADED DATA
                 return <ProfileLayout 
                            onLogout={handleLogout} 
                            onPageChange={handlePageChange} 
@@ -111,7 +140,7 @@ const App = () => {
                        />; 
             case 'dashboard':
             default:
-                // Passing profileData here as well for dashboard greeting/display
+                // profileData is guaranteed to be non-null here due to the 30s timer logic
                 return <Dashboard onLogout={handleLogout} onPageChange={handlePageChange} profileData={profileData} />;
         }
     };

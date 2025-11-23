@@ -55,7 +55,7 @@ const ProfileLayout = ({ onLogout, onPageChange, profileData }) => {
         <div style={{ 
             minHeight: '100vh', 
             backgroundColor: '#F9FAFB', 
-            fontFamily: 'Inter', // <--- ADDED FONT FAMILY for consistency
+            fontFamily: 'Inter', 
             position: 'relative' 
         }}>
 

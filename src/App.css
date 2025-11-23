@@ -36,3 +36,167 @@
     transform: rotate(360deg);
   }
 }
+
+/* --- NEW STYLES FOR FLOATING GEMINI CHATBOT --- */
+
+/* Main container for fixed positioning */
+.chatbot-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 10000; /* High z-index to ensure it floats above everything */
+    font-family: 'Inter', sans-serif;
+}
+
+/* Floating Chat Button */
+.floating-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px 20px;
+    background-color: #38761d; /* Primary Green */
+    color: white;
+    border-radius: 30px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    gap: 10px;
+}
+
+.floating-btn:hover {
+    background-color: #275d13;
+    transform: scale(1.05);
+}
+
+.floating-btn.is-open {
+    /* Hide the button when the window is open */
+    display: none; 
+}
+
+/* Chat Window */
+.chat-window {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 320px; /* Standard chat width */
+    height: 400px; /* Standard chat height */
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: #38761d;
+    color: white;
+    font-weight: 600;
+}
+
+.chat-header .close-btn {
+    cursor: pointer;
+    width: 1.2rem;
+    height: 1.2rem;
+    color: white;
+    transition: transform 0.2s;
+}
+
+.chat-header .close-btn:hover {
+    transform: rotate(90deg);
+}
+
+.chat-body {
+    flex-grow: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background-color: #f7f7f7;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chat-message {
+    max-width: 80%;
+    padding: 8px 12px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+}
+
+.chat-message.bot {
+    align-self: flex-start;
+    background-color: #e0f2f1; /* Light cyan for bot */
+    color: #004d40;
+    border-bottom-left-radius: 2px;
+}
+
+.chat-input-area {
+    display: flex;
+    padding: 10px;
+    border-top: 1px solid #eee;
+    background-color: white;
+}
+
+.chat-input-area input {
+    flex-grow: 1;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    margin-right: 10px;
+    font-size: 0.9rem;
+}
+
+.chat-input-area .send-btn {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: #38761d;
+    cursor: pointer;
+    align-self: center;
+    transition: color 0.2s;
+}
+
+.chat-input-area .send-btn:hover {
+    color: #275d13;
+}
+
+/* --- STYLES FOR LOADING INDICATOR --- */
+
+.chat-message.bot.loading-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 15px;
+    background-color: #e0f2f1;
+    color: #004d40;
+    border-bottom-left-radius: 2px;
+}
+
+.loading-indicator .dot {
+    width: 7px;
+    height: 7px;
+    background-color: #004d40;
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.loading-indicator .dot:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.loading-indicator .dot:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes bounce {
+    0%, 80%, 100% {
+        transform: scale(0);
+    }
+    40% {
+        transform: scale(1.0);
+    }
+}
+/* ----------------------------------------------- */

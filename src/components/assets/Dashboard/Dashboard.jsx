@@ -71,9 +71,9 @@ const METRICS_DATA = [
     { title: 'Pending Reports', value: '3', icon: ReportsIcon, color: '#ef4444' },
 ];
 
-const institutes = ['Institute 1', 'Institute 2', 'Institute 3'];
-const yearLevels = ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10'];
-const sections = ['Section A', 'Section B', 'Section C'];
+const institutes = ['ICS', 'IBE', 'ITE'];
+const yearLevels = ['1ST', '2ND', '3RD', '4TH'];
+const sections = ['A', 'B', 'C'];
 // -----------------------------------------------------------------------
 
 

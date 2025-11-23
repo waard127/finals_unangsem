@@ -15,9 +15,9 @@ const Reports = () => {
     const [reportData, setReportData] = useState(null); // Will hold the generated report data
 
     // Placeholder data for dropdowns
-    const institutes = ['Institute 1', 'Institute 2', 'Institute 3'];
-    const yearLevels = ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10'];
-    const sections = ['Section A', 'Section B', 'Section C'];
+    const institutes = ['Institute Of Computer Studies', 'Institute of Business', 'Institute of Education'];
+    const yearLevels = ['1st Year', '2nd Year', '3rd Year', '4rd Year'];
+    const sections = ['A', 'B', 'C','D'];
 
     const handleGenerateReport = () => {
         // --- Placeholder Logic for Report Generation ---

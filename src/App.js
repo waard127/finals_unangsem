@@ -7,7 +7,8 @@ import ReportsLayout from './components/assets/Reports/ReportsLayout.jsx';
 import ProfileLayout from './components/assets/Profile/ProfileLayout.jsx'; 
 import ViewStuds from './components/assets/Dashboard/ViewStuds.jsx';
 import Gradesheet from './components/assets/Dashboard/Gradesheet.jsx';
-import MultiPageGS from './components/assets/Dashboard/MultiPageGS.jsx'; // <--- NEW IMPORT
+import MultiPageGS from './components/assets/Dashboard/MultiPageGS.jsx'; 
+import VReports from './components/assets/Reports/VReports.jsx'; 
 import LoadingAnimation from './components/assets/LoadingAnimation/LoadingAnimation.jsx'; 
 import './App.css';
 
@@ -19,10 +20,7 @@ import CdmChatbot from './Apps.jsx';
 function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [currentPage, setCurrentPage] = useState('dashboard'); 
-    
-    // --- NEW: State to hold parameters passed between pages ---
     const [pageParams, setPageParams] = useState({}); 
-    // ----------------------------------------------------------
 
     const [isLoadingAuth, setIsLoadingAuth] = useState(true);
     const [profileData, setProfileData] = useState(null); 
@@ -89,10 +87,9 @@ function App() {
         }
     };
 
-    // --- UPDATED: handlePageChange accepts optional params ---
     const handlePageChange = (page, params = {}) => {
         setCurrentPage(page);
-        setPageParams(params); // Store the params (e.g., { viewType: 'Attendance' })
+        setPageParams(params); 
     };
 
     const renderMainContent = () => {
@@ -103,29 +100,24 @@ function App() {
         switch (currentPage) {
             case 'gradesheet':
                 return <Gradesheet onLogout={handleLogout} onPageChange={handlePageChange} />;
-            
-            // --- NEW CASE ---
             case 'multipage-gradesheet':
                 return (
                     <MultiPageGS 
                         onLogout={handleLogout} 
                         onPageChange={handlePageChange} 
-                        viewType={pageParams.viewType || 'Attendance'} // Pass the param
+                        viewType={pageParams.viewType || 'Attendance'} 
                         title={pageParams.title || 'Attendance'}
+                        term={pageParams.term || ''}
                     />
                 );
-            // ----------------
-
             case 'view-studs':
                 return <ViewStuds onLogout={handleLogout} onPageChange={handlePageChange} />;
             case 'reports':
                 return <ReportsLayout onLogout={handleLogout} onPageChange={handlePageChange} />;
+            case 'v-reports': 
+                return <VReports onLogout={handleLogout} onPageChange={handlePageChange} />;
             case 'profile':
-                return <ProfileLayout 
-                           onLogout={handleLogout} 
-                           onPageChange={handlePageChange} 
-                           profileData={profileData} 
-                       />; 
+                return <ProfileLayout onLogout={handleLogout} onPageChange={handlePageChange} profileData={profileData} />; 
             case 'dashboard':
             default:
                 return <Dashboard onLogout={handleLogout} onPageChange={handlePageChange} profileData={profileData} />;

@@ -3,32 +3,17 @@
 import React, { useState } from 'react';
 import './Gradesheet.css';
 import { Sidebar, SIDEBAR_COLLAPSED_WIDTH } from './Sidebar';
+import { AddColumnModal, AddStudentModal } from './ModalComponents'; 
 
-// --- ICONS (Lucide-react style) ---
-const ArrowLeft = (props) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-);
-const Filter = (props) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-);
-const Download = (props) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-);
-const Save = (props) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-);
-const Plus = (props) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-);
-const Upload = (props) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2-2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-);
-const Search = (props) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-);
-const UsersGroup = (props) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-);
+// --- ICONS ---
+const ArrowLeft = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>);
+const Filter = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>);
+const Download = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>);
+const Save = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>);
+const Plus = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>);
+const Upload = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2-2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>);
+const Search = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>);
+const UsersGroup = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>);
 
 // --- MOCK DATA ---
 const GRADES_DATA = [
@@ -37,27 +22,24 @@ const GRADES_DATA = [
 ];
 
 const Gradesheet = ({ onLogout, onPageChange }) => {
-    // Standard sidebar setup
     const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_COLLAPSED_WIDTH);
+    
+    // --- STATE FOR MODALS ---
+    const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
+    const [isAddRowOpen, setIsAddRowOpen] = useState(false);
 
-    // --- UPDATED: Navigate to MultiPageGS ---
-    const handleHeaderClick = (title, type) => {
-        // We pass the 'viewType' (Activity or Attendance) and the 'title' (e.g. Activity 1)
-        onPageChange('multipage-gradesheet', { viewType: type, title: title });
+    // Navigate to MultiPageGS with specific parameters
+    const handleHeaderClick = (title, type, term) => {
+        onPageChange('multipage-gradesheet', { viewType: type, title: title, term: term });
     };
 
     return (
         <div className="gradesheet-layout">
-            <Sidebar 
-                onLogout={onLogout} 
-                onPageChange={onPageChange} 
-                currentPage="dashboard" // Keep 'Dashboard' highlighted
-                onWidthChange={setSidebarWidth} 
-            />
+            <Sidebar onLogout={onLogout} onPageChange={onPageChange} currentPage="dashboard" onWidthChange={setSidebarWidth} />
 
             <main className="gradesheet-main" style={{ marginLeft: sidebarWidth }}>
                 
-                {/* 1. Header Section */}
+                {/* --- HEADER --- */}
                 <div className="gs-header-container">
                     <div className="gs-header-left">
                         <button className="gs-back-btn" onClick={() => onPageChange('view-studs')}>
@@ -69,23 +51,23 @@ const Gradesheet = ({ onLogout, onPageChange }) => {
                         </div>
                     </div>
                     <div className="gs-header-right">
-                        <button className="gs-btn gs-btn-white">
-                            <Filter size={16} /> Filter
-                        </button>
-                        <button className="gs-btn gs-btn-white">
-                            <Download size={16} /> Export
-                        </button>
-                        <button className="gs-btn gs-btn-primary">
-                            <Save size={16} /> Save Changes
-                        </button>
+                        <button className="gs-btn gs-btn-white"><Filter size={16} /> Filter</button>
+                        <button className="gs-btn gs-btn-white"><Download size={16} /> Export</button>
+                        <button className="gs-btn gs-btn-primary"><Save size={16} /> Save Changes</button>
                     </div>
                 </div>
 
-                {/* 2. Toolbar & Search */}
+                {/* --- TOOLBAR --- */}
                 <div className="gs-toolbar">
                     <div className="gs-tools-left">
-                        <button className="gs-tool-btn"><Plus size={14} /> Add Column</button>
-                        <button className="gs-tool-btn"><Plus size={14} /> Add Row</button>
+                        {/* TRIGGER MODALS */}
+                        <button className="gs-tool-btn" onClick={() => setIsAddColumnOpen(true)}>
+                            <Plus size={14} /> Add Column
+                        </button>
+                        <button className="gs-tool-btn" onClick={() => setIsAddRowOpen(true)}>
+                            <Plus size={14} /> Add Row
+                        </button>
+                        
                         <button className="gs-tool-btn">Export Excel</button>
                         <button className="gs-icon-only-btn"><Upload size={16} /></button>
                     </div>
@@ -95,7 +77,7 @@ const Gradesheet = ({ onLogout, onPageChange }) => {
                     </div>
                 </div>
 
-                {/* 3. The Spreadsheet Table */}
+                {/* --- TABLE --- */}
                 <div className="gs-table-wrapper">
                     <table className="gs-table">
                         <thead>
@@ -104,76 +86,18 @@ const Gradesheet = ({ onLogout, onPageChange }) => {
                                 <th className="fixed-col">Student Name</th>
                                 <th className="fixed-col">Type of Student</th>
                                 
-                                {/* --- UPDATED: CLICKABLE GRADE COLUMNS --- */}
-                                <th>
-                                    <button 
-                                        className="gs-pill gs-pill-green gs-pill-clickable"
-                                        onClick={() => handleHeaderClick('Attendance', 'Attendance')}
-                                    >
-                                        Attendance
-                                    </button>
-                                </th>
-                                <th>
-                                    <button 
-                                        className="gs-pill gs-pill-green gs-pill-clickable"
-                                        onClick={() => handleHeaderClick('Assignment', 'Activity')}
-                                    >
-                                        Assignment
-                                    </button>
-                                </th>
-                                <th>
-                                    <button 
-                                        className="gs-pill gs-pill-green gs-pill-clickable"
-                                        onClick={() => handleHeaderClick('Quizzes', 'Activity')}
-                                    >
-                                        Quizzes
-                                    </button>
-                                </th>
-                                <th>
-                                    <button 
-                                        className="gs-pill gs-pill-green gs-pill-clickable"
-                                        onClick={() => handleHeaderClick('Activity', 'Activity')}
-                                    >
-                                        Activity
-                                    </button>
-                                </th>
-                                
-                                {/* Standard Headers */}
+                                {/* --- MIDTERM COLUMNS --- */}
+                                <th><button className="gs-pill gs-pill-green gs-pill-clickable" onClick={() => handleHeaderClick('Attendance', 'Attendance', 'Midterm')}>Attendance</button></th>
+                                <th><button className="gs-pill gs-pill-green gs-pill-clickable" onClick={() => handleHeaderClick('Assignment', 'Activity', 'Midterm')}>Assignment</button></th>
+                                <th><button className="gs-pill gs-pill-green gs-pill-clickable" onClick={() => handleHeaderClick('Quiz', 'Activity', 'Midterm')}>Quizzes</button></th>
+                                <th><button className="gs-pill gs-pill-green gs-pill-clickable" onClick={() => handleHeaderClick('Activity', 'Activity', 'Midterm')}>Activity</button></th>
                                 <th>Midterm</th>
                                 
-                                <th>
-                                    <button 
-                                        className="gs-pill gs-pill-green gs-pill-clickable"
-                                        onClick={() => handleHeaderClick('Recitation', 'Activity')}
-                                    >
-                                        Recitation
-                                    </button>
-                                </th>
-                                <th>
-                                    <button 
-                                        className="gs-pill gs-pill-green gs-pill-clickable"
-                                        onClick={() => handleHeaderClick('Assignment 2', 'Activity')}
-                                    >
-                                        Assignment
-                                    </button>
-                                </th>
-                                <th>
-                                    <button 
-                                        className="gs-pill gs-pill-green gs-pill-clickable"
-                                        onClick={() => handleHeaderClick('Quizzes 2', 'Activity')}
-                                    >
-                                        Quizzes
-                                    </button>
-                                </th>
-                                <th>
-                                    <button 
-                                        className="gs-pill gs-pill-green gs-pill-clickable"
-                                        onClick={() => handleHeaderClick('Activity 2', 'Activity')}
-                                    >
-                                        Activity
-                                    </button>
-                                </th>
-                                
+                                {/* --- FINALS COLUMNS --- */}
+                                <th><button className="gs-pill gs-pill-green gs-pill-clickable" onClick={() => handleHeaderClick('Recitation', 'Activity', 'Finals')}>Recitation</button></th>
+                                <th><button className="gs-pill gs-pill-green gs-pill-clickable" onClick={() => handleHeaderClick('Assignment', 'Activity', 'Finals')}>Assignment</button></th>
+                                <th><button className="gs-pill gs-pill-green gs-pill-clickable" onClick={() => handleHeaderClick('Quiz', 'Activity', 'Finals')}>Quizzes</button></th>
+                                <th><button className="gs-pill gs-pill-green gs-pill-clickable" onClick={() => handleHeaderClick('Activity', 'Activity', 'Finals')}>Activity</button></th>
                                 <th>Finals</th>
                             </tr>
                         </thead>
@@ -187,8 +111,6 @@ const Gradesheet = ({ onLogout, onPageChange }) => {
                                             {student.type}
                                         </span>
                                     </td>
-                                    
-                                    {/* Inputs for grades */}
                                     <td><input type="text" defaultValue={student.grades.attendance} className="gs-input" /></td>
                                     <td><input type="text" defaultValue={student.grades.assignment} className="gs-input" /></td>
                                     <td><input type="text" defaultValue={student.grades.quizzes} className="gs-input" /></td>
@@ -205,18 +127,21 @@ const Gradesheet = ({ onLogout, onPageChange }) => {
                     </table>
                 </div>
 
-                {/* 4. Footer Summary Card */}
+                {/* --- FOOTER --- */}
                 <div className="gs-footer-card">
                     <div>
                         <span className="gs-footer-label">Total Students</span>
                         <div className="gs-footer-count">8</div>
                     </div>
-                    <div className="gs-footer-icon-box">
-                        <UsersGroup size={24} />
-                    </div>
+                    <div className="gs-footer-icon-box"><UsersGroup size={24} /></div>
                 </div>
 
             </main>
+
+            {/* --- MODALS --- */}
+            <AddColumnModal isOpen={isAddColumnOpen} onClose={() => setIsAddColumnOpen(false)} />
+            <AddStudentModal isOpen={isAddRowOpen} onClose={() => setIsAddRowOpen(false)} />
+
         </div>
     );
 };

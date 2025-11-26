@@ -1,120 +1,148 @@
+// src/components/assets/Reports/Reports.jsx
+
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import './Reports.css';
 
-// Inline SVG Icon for the placeholder (Lucide-react inspired)
-const BarChartBigIcon = (props) => (
+// --- ICONS ---
+const FileTextIcon = (props) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V6"/><path d="M8 17v4"/>
+        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+        <line x1="10" y1="9" x2="8" y2="9"/>
     </svg>
 );
 
-const Reports = () => {
-    const [institute, setInstitute] = useState('');
-    const [yearLevel, setYearLevel] = useState('');
-    const [section, setSection] = useState('');
-    const [reportData, setReportData] = useState(null); // Will hold the generated report data
+const UsersIcon = (props) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+);
 
-    // Placeholder data for dropdowns
-    const institutes = ['Institute Of Computer Studies', 'Institute of Business', 'Institute of Education'];
-    const yearLevels = ['1st Year', '2nd Year', '3rd Year', '4rd Year'];
-    const sections = ['A', 'B', 'C','D'];
+const ChevronDown = (props) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+);
 
-    const handleGenerateReport = () => {
-        // --- Placeholder Logic for Report Generation ---
-        if (!institute || !yearLevel || !section) {
-            alert('Please select an Institute, Year Level, and Section before generating the report.');
-            return;
+const ArrowRight = (props) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+);
+
+
+const Reports = ({ onPageChange }) => { // <--- Added onPageChange prop
+    // State for filters
+    const [institute, setInstitute] = useState('College of Engineering');
+    const [yearLevel, setYearLevel] = useState('1st Year');
+    const [section, setSection] = useState('All Sections');
+
+    // Mock Data for Classes
+    const CLASSES = [
+        {
+            id: 1,
+            code: 'CS 101 - A',
+            name: 'Introduction to Programming',
+            atRisk: 3
+        },
+    ];
+
+    // Navigation Handler
+    const handleClassClick = (classId) => {
+        console.log(`Navigating to report details for Class ID: ${classId}`);
+        // Navigate to the VReports page only if a function is provided
+        if (typeof onPageChange === 'function') {
+            onPageChange('v-reports');
+        } else {
+            console.warn('Reports: onPageChange prop is not a function, navigation skipped.');
         }
-
-        // Simulate fetching/generating report data
-        const simulatedData = {
-            id: Date.now(),
-            filters: { institute, yearLevel, section },
-            summary: `Attendance Report Summary for ${institute}, ${yearLevel} - ${section}`,
-            details: [
-                { name: 'Total Students', value: 85 },
-                { name: 'Average Attendance Rate', value: '92.5%' },
-                { name: 'Students with low attendance', value: 5 },
-            ]
-        };
-        setReportData(simulatedData);
     };
 
-    const renderReportContent = () => {
-        if (!reportData) {
-            return (
-                <div className="report-placeholder">
-                    <BarChartBigIcon className="report-placeholder-icon" />
-                    <h3>No Report Generated</h3>
-                    <p>Select the filters above and click 'Generate Report' to view the analytics.</p>
+    return (
+        <div className="reports-page-container">
+            
+            {/* 1. Filter Card (Clean White Floating Card) */}
+            <div className="rep-filter-card">
+                <div className="rep-filter-group">
+                    <label>Institute</label>
+                    <div className="rep-select-wrapper">
+                        <select value={institute} onChange={(e) => setInstitute(e.target.value)}>
+                            <option>College of Engineering</option>
+                            <option>Institute of Education</option>
+                            <option>Institute of Business</option>
+                        </select>
+                        <ChevronDown className="rep-chevron" />
+                    </div>
                 </div>
-            );
-        }
 
-        return (
-            <div className="p-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">{reportData.summary}</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {reportData.details.map((item, index) => (
-                        <div key={index} className="bg-green-50 p-4 rounded-lg shadow-md border-l-4 border-green-500">
-                            <p className="text-sm font-medium text-gray-500">{item.name}</p>
-                            <p className="text-3xl font-extrabold text-green-700 mt-1">{item.value}</p>
+                <div className="rep-filter-group">
+                    <label>Year Level</label>
+                    <div className="rep-select-wrapper">
+                        <select value={yearLevel} onChange={(e) => setYearLevel(e.target.value)}>
+                            <option>1st Year</option>
+                            <option>2nd Year</option>
+                            <option>3rd Year</option>
+                            <option>4th Year</option>
+                        </select>
+                        <ChevronDown className="rep-chevron" />
+                    </div>
+                </div>
+
+                <div className="rep-filter-group">
+                    <label>Section</label>
+                    <div className="rep-select-wrapper">
+                        <select value={section} onChange={(e) => setSection(e.target.value)}>
+                            <option>All Sections</option>
+                            <option>Section A</option>
+                            <option>Section B</option>
+                        </select>
+                        <ChevronDown className="rep-chevron" />
+                    </div>
+                </div>
+            </div>
+
+            {/* 2. Main Content Card */}
+            <div className="rep-main-card">
+                <div className="rep-card-header">
+                    <h2>Assess Student</h2>
+                    <p>Manage your sections and track student progress</p>
+                </div>
+
+                <div className="rep-grid">
+                    {CLASSES.map((cls) => (
+                        <div key={cls.id} className="rep-class-card">
+                            <div className="rep-class-icon-box">
+                                <FileTextIcon className="rep-class-icon" />
+                            </div>
+                            
+                            <h3 className="rep-class-code">{cls.code}</h3>
+                            <p className="rep-class-name">{cls.name}</p>
+                            
+                            <div className="rep-card-footer">
+                                <div className="rep-at-risk">
+                                    <UsersIcon /> 
+                                    <span>At-Risk Students - {cls.atRisk}</span>
+                                </div>
+                                <button 
+                                    className="rep-view-link" 
+                                    onClick={() => handleClassClick(cls.id)}
+                                >
+                                    View <ArrowRight />
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </div>
-                
-                {/* Add more detailed report structure here (e.g., tables, charts) */}
-                <div className="mt-8 p-4 border rounded-lg bg-gray-50 text-left">
-                    <h4 className="text-lg font-semibold mb-2 text-gray-700">Detailed View (Placeholder)</h4>
-                    <p className="text-gray-600">
-                        This area would display tables, graphs, and detailed student data based on the selected criteria. 
-                        Filters: {reportData.filters.institute}, {reportData.filters.yearLevel}, {reportData.filters.section}
-                    </p>
-                </div>
-            </div>
-        );
-    };
-
-
-    return (
-        <div className="reports-page">
-            <div className="reports-header">
-                <h1>Reports</h1>
             </div>
 
-            {/* Controls Bar (Filters) */}
-            <div className="report-controls-bar">
-                
-                {/* Institute Dropdown */}
-                <select value={institute} onChange={(e) => setInstitute(e.target.value)}>
-                    <option value="">Select Institute</option>
-                    {institutes.map(inst => <option key={inst} value={inst}>{inst}</option>)}
-                </select>
-
-                {/* Year Level Dropdown */}
-                <select value={yearLevel} onChange={(e) => setYearLevel(e.target.value)}>
-                    <option value="">Select Year Level</option>
-                    {yearLevels.map(year => <option key={year} value={year}>{year}</option>)}
-                </select>
-
-                {/* Section Dropdown */}
-                <select value={section} onChange={(e) => setSection(e.target.value)}>
-                    <option value="">Select Section</option>
-                    {sections.map(sec => <option key={sec} value={sec}>{sec}</option>)}
-                </select>
-
-                {/* Generate Button */}
-                <button className="generate-report-btn" onClick={handleGenerateReport}>
-                    Generate Report
-                </button>
-            </div>
-
-            {/* Main Report Content Area */}
-            <div className="report-content-area">
-                {renderReportContent()}
-            </div>
         </div>
     );
 };
 
 export default Reports;
+
+Reports.propTypes = {
+    onPageChange: PropTypes.func,
+};

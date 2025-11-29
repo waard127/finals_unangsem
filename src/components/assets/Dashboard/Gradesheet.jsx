@@ -11,26 +11,53 @@ const Filter = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" wi
 const Download = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>);
 const Save = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>);
 const Plus = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>);
-const Upload = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2-2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>);
+const Trash = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>);
 const Search = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>);
 const UsersGroup = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>);
 
 // --- MOCK DATA ---
-const GRADES_DATA = [
+const INITIAL_DATA = [
     { id: '2024001', name: 'Anderson, James', type: 'Irregular', grades: { attendance: 95, assignment: 92, quizzes: 88, activity: 90, midterm: 87, recitation: 95, assignment2: 92, quizzes2: 88, activity2: 90, finals: 87 } },
     { id: '2024002', name: 'Bennett, Sarah', type: 'Regular', grades: { attendance: 70, assignment: 71, quizzes: 70, activity: 67, midterm: 68, recitation: 70, assignment2: 70, quizzes2: 70, activity2: 70, finals: 70 } },
+    { id: '2024003', name: 'Carter, Michael', type: 'Regular', grades: { attendance: 85, assignment: 82, quizzes: 88, activity: 80, midterm: 83, recitation: 85, assignment2: 82, quizzes2: 88, activity2: 80, finals: 83 } },
 ];
 
 const Gradesheet = ({ onLogout, onPageChange }) => {
     const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_COLLAPSED_WIDTH);
+    const [gradesData, setGradesData] = useState(INITIAL_DATA);
     
-    // --- STATE FOR MODALS ---
+    // --- STATE FOR SELECTION & MODALS ---
     const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
     const [isAddRowOpen, setIsAddRowOpen] = useState(false);
+    const [selectedRowIds, setSelectedRowIds] = useState([]);
 
-    // Navigate to MultiPageGS with specific parameters
     const handleHeaderClick = (title, type, term) => {
         onPageChange('multipage-gradesheet', { viewType: type, title: title, term: term });
+    };
+
+    // Toggle single row
+    const toggleRowSelection = (id) => {
+        setSelectedRowIds(prev => 
+            prev.includes(id) ? prev.filter(rowId => rowId !== id) : [...prev, id]
+        );
+    };
+
+    // Toggle all rows
+    const toggleSelectAll = (e) => {
+        if (e.target.checked) {
+            setSelectedRowIds(gradesData.map(s => s.id));
+        } else {
+            setSelectedRowIds([]);
+        }
+    };
+
+    // Delete Logic
+    const handleDeleteSelected = () => {
+        if (window.confirm(`Are you sure you want to delete ${selectedRowIds.length} student(s)?`)) {
+            const newData = gradesData.filter(student => !selectedRowIds.includes(student.id));
+            setGradesData(newData);
+            setSelectedRowIds([]); // Clear selection
+        }
     };
 
     return (
@@ -60,16 +87,23 @@ const Gradesheet = ({ onLogout, onPageChange }) => {
                 {/* --- TOOLBAR --- */}
                 <div className="gs-toolbar">
                     <div className="gs-tools-left">
-                        {/* TRIGGER MODALS */}
-                        <button className="gs-tool-btn" onClick={() => setIsAddColumnOpen(true)}>
-                            <Plus size={14} /> Add Column
-                        </button>
-                        <button className="gs-tool-btn" onClick={() => setIsAddRowOpen(true)}>
-                            <Plus size={14} /> Add Row
-                        </button>
+                        {/* CONDITIONAL DELETE BUTTON */}
+                        {selectedRowIds.length > 0 ? (
+                            <button className="gs-tool-btn" style={{backgroundColor: '#FEE2E2', color: '#DC2626'}} onClick={handleDeleteSelected}>
+                                <Trash size={14} /> Delete ({selectedRowIds.length})
+                            </button>
+                        ) : (
+                            <>
+                                <button className="gs-tool-btn" onClick={() => setIsAddColumnOpen(true)}>
+                                    <Plus size={14} /> Add Column
+                                </button>
+                                <button className="gs-tool-btn" onClick={() => setIsAddRowOpen(true)}>
+                                    <Plus size={14} /> Add Row
+                                </button>
+                            </>
+                        )}
                         
                         <button className="gs-tool-btn">Export Excel</button>
-                        <button className="gs-icon-only-btn"><Upload size={16} /></button>
                     </div>
                     <div className="gs-search-wrapper">
                         <Search className="gs-search-icon" size={16} />
@@ -82,6 +116,15 @@ const Gradesheet = ({ onLogout, onPageChange }) => {
                     <table className="gs-table">
                         <thead>
                             <tr>
+                                {/* CHECKBOX COLUMN HEADER */}
+                                <th className="fixed-col" style={{width: '40px', paddingLeft: '1rem'}}>
+                                    <input 
+                                        type="checkbox" 
+                                        onChange={toggleSelectAll} 
+                                        checked={gradesData.length > 0 && selectedRowIds.length === gradesData.length}
+                                        style={{cursor: 'pointer'}}
+                                    />
+                                </th>
                                 <th className="fixed-col">Student ID</th>
                                 <th className="fixed-col">Student Name</th>
                                 <th className="fixed-col">Type of Student</th>
@@ -102,8 +145,17 @@ const Gradesheet = ({ onLogout, onPageChange }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            {GRADES_DATA.map((student) => (
-                                <tr key={student.id}>
+                            {gradesData.map((student) => (
+                                <tr key={student.id} style={{backgroundColor: selectedRowIds.includes(student.id) ? '#F3F4F6' : 'white'}}>
+                                    {/* CHECKBOX CELL */}
+                                    <td className="fixed-col" style={{paddingLeft: '1rem'}}>
+                                        <input 
+                                            type="checkbox" 
+                                            checked={selectedRowIds.includes(student.id)}
+                                            onChange={() => toggleRowSelection(student.id)}
+                                            style={{cursor: 'pointer'}}
+                                        />
+                                    </td>
                                     <td className="fixed-col gs-id-cell">{student.id}</td>
                                     <td className="fixed-col font-bold">{student.name}</td>
                                     <td className="fixed-col">
@@ -131,14 +183,13 @@ const Gradesheet = ({ onLogout, onPageChange }) => {
                 <div className="gs-footer-card">
                     <div>
                         <span className="gs-footer-label">Total Students</span>
-                        <div className="gs-footer-count">8</div>
+                        <div className="gs-footer-count">{gradesData.length}</div>
                     </div>
                     <div className="gs-footer-icon-box"><UsersGroup size={24} /></div>
                 </div>
 
             </main>
 
-            {/* --- MODALS --- */}
             <AddColumnModal isOpen={isAddColumnOpen} onClose={() => setIsAddColumnOpen(false)} />
             <AddStudentModal isOpen={isAddRowOpen} onClose={() => setIsAddRowOpen(false)} />
 

@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import './VReports.css';
-// The path below relies on this file being in the Reports folder
 import { Sidebar, SIDEBAR_DEFAULT_WIDTH } from '../Dashboard/Sidebar';
 
 // --- ICONS ---
@@ -30,15 +29,6 @@ const STUDENT_DATA = [
         missed: 8,
         status: 'Medium Risk'
     },
-    {
-        id: 'CS2023004',
-        name: 'Michael Brown',
-        avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026024e',
-        gpa: 2.5,
-        attendance: '82%',
-        missed: 5,
-        status: 'Low Risk'
-    }
 ];
 
 const VReports = ({ onLogout, onPageChange }) => {
@@ -86,10 +76,6 @@ const VReports = ({ onLogout, onPageChange }) => {
                             <Search className="vr-search-icon" />
                             <input type="text" placeholder="Search student..." />
                         </div>
-                        <div className="vr-dropdown-box">
-                            <span>All Status</span>
-                            <ChevronDown className="vr-chevron" />
-                        </div>
                     </div>
                 </div>
 
@@ -129,9 +115,12 @@ const VReports = ({ onLogout, onPageChange }) => {
                                     <td className="center-text">
                                         <div className="vr-actions">
                                             <button className="vr-btn-contact">Contact</button>
-                                            <button className="vr-btn-view" onClick={() => onPageChange('profile')}>
+                                            
+                                            {/* --- FIX IS HERE: Redirects to 'view-rd' (Analytics Page) --- */}
+                                            <button className="vr-btn-view" onClick={() => onPageChange('view-rd')}>
                                                 View Details
                                             </button>
+
                                         </div>
                                     </td>
                                 </tr>

@@ -9,6 +9,7 @@ import ViewStuds from './components/assets/Dashboard/ViewStuds.jsx';
 import Gradesheet from './components/assets/Dashboard/Gradesheet.jsx';
 import MultiPageGS from './components/assets/Dashboard/MultiPageGS.jsx'; 
 import VReports from './components/assets/Reports/VReports.jsx'; 
+import ViewRD from './components/assets/Reports/ViewRD.jsx'; // <--- IMPORT NEW COMPONENT
 import LoadingAnimation from './components/assets/LoadingAnimation/LoadingAnimation.jsx'; 
 import './App.css';
 
@@ -116,6 +117,8 @@ function App() {
                 return <ReportsLayout onLogout={handleLogout} onPageChange={handlePageChange} />;
             case 'v-reports': 
                 return <VReports onLogout={handleLogout} onPageChange={handlePageChange} />;
+            case 'view-rd': // <--- ADD NEW CASE
+                return <ViewRD onLogout={handleLogout} onPageChange={handlePageChange} />;
             case 'profile':
                 return <ProfileLayout onLogout={handleLogout} onPageChange={handlePageChange} profileData={profileData} />; 
             case 'dashboard':

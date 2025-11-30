@@ -4,11 +4,15 @@
         {
             "label": "Smart Start",
             "type": "shell",
-            "command": "powershell -ExecutionPolicy Bypass -File \"${workspaceFolder}/auto-start.ps1\"",
-            "group": "build",
+            "command": "powershell",
+            "args": [
+                "-ExecutionPolicy", "Bypass",
+                "-File", "${workspaceFolder}/auto-start.ps1"
+            ],
             "presentation": {
-                "reveal": "silent",
-                "panel": "shared"
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true
             },
             "problemMatcher": []
         }

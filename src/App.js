@@ -9,13 +9,12 @@ import ViewStuds from './components/assets/Dashboard/ViewStuds.jsx';
 import Gradesheet from './components/assets/Dashboard/Gradesheet.jsx';
 import MultiPageGS from './components/assets/Dashboard/MultiPageGS.jsx'; 
 import VReports from './components/assets/Reports/VReports.jsx'; 
-import ViewRD from './components/assets/Reports/ViewRD.jsx'; // <--- IMPORT NEW COMPONENT
+import ViewRD from './components/assets/Reports/ViewRD.jsx'; 
 import LoadingAnimation from './components/assets/LoadingAnimation/LoadingAnimation.jsx'; 
 import './App.css';
 
-import { auth, db } from './apiService'; 
+import { auth } from './apiService'; 
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth'; 
-import { doc, getDoc } from 'firebase/firestore'; 
 import CdmChatbot from './Apps.jsx'; 
 
 function App() {
@@ -27,45 +26,61 @@ function App() {
     const [profileData, setProfileData] = useState(null); 
     const [isDataReady, setIsDataReady] = useState(false); 
 
-    // eslint-disable-next-line no-undef
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; 
-
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                console.log("User signed in:", user.uid);
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+            if (firebaseUser) {
+                console.log("Firebase User detected:", firebaseUser.email);
                 setIsLoggedIn(true);
-                // eslint-disable-next-line no-undef
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) { 
-                    try {
-                        // eslint-disable-next-line no-undef
-                        await auth.signInWithCustomToken(__initial_auth_token); 
-                    } catch (error) {
-                        console.error("Error signing in with custom token:", error);
-                    }
-                }
                 
-                const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
+                // --- SYNC WITH MONGODB BACKEND ---
                 try {
-                    const docSnap = await getDoc(userDocRef);
-                    if (docSnap.exists()) {
-                        setProfileData(docSnap.data());
-                    } else {
-                        setProfileData({
-                            fullName: user.email || 'CDM User',
-                            email: user.email,
-                            role: 'teacher', 
-                        });
-                    }
-                } catch (error) {
-                    setProfileData({
-                        fullName: user.email || 'CDM User',
-                        email: user.email,
-                        role: 'teacher',
+                    // We send the data to our local server to save/retrieve extended profile info
+                    const response = await fetch('http://localhost:5000/api/user-sync', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            uid: firebaseUser.uid,
+                            email: firebaseUser.email,
+                            // Use Firebase display name, or fallback to email username
+                            displayName: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+                            // CRITICAL: Send the photoURL. If null, send an empty string.
+                            photoURL: firebaseUser.photoURL || "" 
+                        })
                     });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to sync user with backend');
+                    }
+
+                    const mongoProfile = await response.json();
+                    console.log("Loaded Profile from MongoDB:", mongoProfile);
+                    
+                    // Merge MongoDB data with Firebase data for the UI
+                    setProfileData({
+                        ...mongoProfile,
+                        id: mongoProfile.uid, 
+                        displayName: mongoProfile.displayName,
+                        // Prioritize the photo from DB, fallback to Firebase, then null
+                        photoURL: mongoProfile.photoURL || firebaseUser.photoURL
+                    });
+                    
+                    setIsDataReady(true);
+
+                } catch (error) {
+                    console.error("Error fetching profile from MongoDB:", error);
+                    // OFFLINE FALLBACK: If server is down, use basic Firebase data
+                    setProfileData({
+                        displayName: firebaseUser.displayName || 'Professor',
+                        email: firebaseUser.email,
+                        id: firebaseUser.uid,
+                        role: 'Offline Mode',
+                        photoURL: firebaseUser.photoURL
+                    });
+                    setIsDataReady(true);
                 }
-                setIsDataReady(true); 
+
             } else {
+                // User is logged out
                 setIsLoggedIn(false);
                 setProfileData(null);
                 setIsDataReady(false); 
@@ -74,15 +89,17 @@ function App() {
         });
 
         return () => unsubscribe();
-    }, [appId]);
+    }, []);
 
     const handleLoginSuccess = () => {
-        console.log("Login success reported to App.js.");
+        console.log("Login flow initiated.");
     };
 
     const handleLogout = async () => {
         try {
             await firebaseSignOut(auth);
+            setProfileData(null);
+            setIsLoggedIn(false);
         } catch (error) {
             console.error("Error during logout:", error);
         }
@@ -117,7 +134,7 @@ function App() {
                 return <ReportsLayout onLogout={handleLogout} onPageChange={handlePageChange} />;
             case 'v-reports': 
                 return <VReports onLogout={handleLogout} onPageChange={handlePageChange} />;
-            case 'view-rd': // <--- ADD NEW CASE
+            case 'view-rd': 
                 return <ViewRD onLogout={handleLogout} onPageChange={handlePageChange} />;
             case 'profile':
                 return <ProfileLayout onLogout={handleLogout} onPageChange={handlePageChange} profileData={profileData} />; 
@@ -127,6 +144,7 @@ function App() {
         }
     };
 
+    // Only show chatbot if user is logged in and data is ready
     const showChatbot = isLoggedIn && profileData && isDataReady;
 
     if (isLoggedIn) {

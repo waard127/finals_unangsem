@@ -53,9 +53,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "bugs": {
     "url": "https://github.com/Kleindev19/finals_unangsem/issues"
-  },
-  "homepage": "https://github.com/Kleindev19/finals_unangsem#readme"
+  }
 }

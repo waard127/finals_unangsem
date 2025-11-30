@@ -1,6 +1,6 @@
 // src/components/assets/Dashboard/Dashboard.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar, SIDEBAR_EXPANDED_WIDTH } from './Sidebar.jsx';
 
 // --- ICONS ---
@@ -50,7 +50,6 @@ const MetricCard = ({ data }) => (
     </div>
 );
 
-// --- UPDATED CLASS CARD: Accepts onClick ---
 const ClassCard = ({ data, onClick }) => (
     <div className="class-card" onClick={onClick} style={{ cursor: 'pointer' }}>
         <div className="class-icon-header" style={{ backgroundColor: data.color, boxShadow: `0 4px 10px ${data.color}50` }}>
@@ -68,6 +67,97 @@ const ClassCard = ({ data, onClick }) => (
         </div>
     </div>
 );
+
+// --- NEW: ANIMATED GREETING COMPONENT ---
+const GreetingSection = ({ profileData }) => {
+    const [text, setText] = useState('');
+    // Use displayName or fallback
+    const userName = profileData?.displayName || profileData?.fullName || 'Professor';
+    const fullText = `Good Day, ${userName}`;
+
+    // Get initials for fallback avatar
+    const getInitials = (name) => {
+        const parts = name.split(' ');
+        if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        return name[0]?.toUpperCase() || 'U';
+    };
+    
+    const fallbackAvatar = `https://ui-avatars.com/api/?name=${getInitials(userName)}&background=38761d&color=fff&size=128&bold=true`;
+    const avatarSrc = profileData?.photoURL || fallbackAvatar;
+
+    // Typing Effect Logic
+    useEffect(() => {
+        let i = 0;
+        setText(''); // Reset on mount
+        const timer = setInterval(() => {
+            if (i < fullText.length) {
+                setText((prev) => prev + fullText.charAt(i));
+                i++;
+            } else {
+                clearInterval(timer);
+            }
+        }, 50); // Speed: 50ms per character
+
+        return () => clearInterval(timer);
+    }, [fullText]);
+
+    return (
+        <div style={{ 
+            marginBottom: '2.5rem', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '1.5rem',
+            animation: 'fadeIn 0.5s ease-in-out'
+        }}>
+            {/* 1. Profile Picture with Ring */}
+            <div style={{
+                position: 'relative',
+                width: '80px',
+                height: '80px',
+                borderRadius: '50%',
+                border: '3px solid #38761d', // Green border matching theme
+                padding: '3px', // Spacing between border and image
+                backgroundColor: 'white',
+                boxShadow: '0 4px 12px rgba(56, 118, 29, 0.2)'
+            }}>
+                <img 
+                    src={avatarSrc} 
+                    alt="Profile" 
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: '50%',
+                        objectFit: 'cover'
+                    }}
+                    onError={(e) => { e.target.onerror = null; e.target.src = fallbackAvatar; }}
+                />
+            </div>
+
+            {/* 2. Typing Text */}
+            <h1 style={{ 
+                fontSize: '2.25rem', 
+                fontWeight: '800', 
+                color: '#1F2937', 
+                margin: 0,
+                minHeight: '3rem', // Prevents layout shift while typing
+                display: 'flex',
+                alignItems: 'center'
+            }}>
+                {text}
+                <span className="blinking-cursor" style={{ color: '#38761d', marginLeft: '5px' }}>|</span>
+            </h1>
+
+            {/* Simple CSS for blinking cursor injected here */}
+            <style>
+                {`
+                    @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
+                    .blinking-cursor { animation: blink 1s infinite; }
+                    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                `}
+            </style>
+        </div>
+    );
+};
 
 const Dashboard = ({ onLogout, onPageChange, profileData }) => {
     const isDesktopMode = window.innerWidth >= 1024;
@@ -97,14 +187,10 @@ const Dashboard = ({ onLogout, onPageChange, profileData }) => {
                     </div>
                 </div>
 
-                {/* Greeting */}
-                <div style={{ marginBottom: '2.5rem' }}>
-                    <h1 style={{ fontSize: '2.25rem', fontWeight: '800', color: '#1F2937', marginBottom: '0.5rem' }}>
-                        Good Day, {profileData?.fullName || 'Prof. Junas Arroyo'}
-                    </h1>
-                </div>
+                {/* --- NEW GREETING SECTION --- */}
+                <GreetingSection profileData={profileData} />
 
-                {/* Filters Section (Imitating the white card look) */}
+                {/* Filters Section */}
                 <div className="section-container">
                     <div className="filters-bar">
                         <select className="select-filter"><option>College of Engineering</option></select>
@@ -120,7 +206,6 @@ const Dashboard = ({ onLogout, onPageChange, profileData }) => {
                             <ClassCard 
                                 key={idx} 
                                 data={cls} 
-                                // --- NAVIGATION TRIGGER ---
                                 onClick={() => onPageChange('view-studs')} 
                             />
                         ))}

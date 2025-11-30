@@ -2,7 +2,6 @@
 $ErrorActionPreference = "Stop"
 
 # --- HELPER: FUNCTION TO FOCUS WINDOW ---
-# This bit of magic allows PowerShell to switch to an existing window
 Add-Type @"
   using System;
   using System.Runtime.InteropServices;
@@ -14,7 +13,8 @@ Add-Type @"
 "@
 
 # --- HELPER: SYSTEM INSTALL CHECK ---
-function Check-And-Install ($ProgramName, $CommandName, $PackageId) {
+# FIXED: Renamed 'Check-And-Install' to 'Install-SystemRequirement' to satisfy PSScriptAnalyzer
+function Install-SystemRequirement ($ProgramName, $CommandName, $PackageId) {
     if (-not (Get-Command $CommandName -ErrorAction SilentlyContinue)) {
         Write-Host "$ProgramName command not found in PATH. Checking deeper..." -ForegroundColor DarkGray
         return $false 
@@ -25,7 +25,7 @@ function Check-And-Install ($ProgramName, $CommandName, $PackageId) {
 Write-Host "--- 1. SYSTEM HEALTH CHECK ---" -ForegroundColor Cyan
 
 # --- CHECK NODE.JS ---
-if (-not (Check-And-Install "Node.js" "node" "OpenJS.NodeJS")) {
+if (-not (Install-SystemRequirement "Node.js" "node" "OpenJS.NodeJS")) {
     Write-Host "Node.js is missing. Installing..." -ForegroundColor Red
     winget install --id "OpenJS.NodeJS" -e --accept-source-agreements --accept-package-agreements
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
@@ -65,7 +65,7 @@ if (-not $BackendActive) {
 $FrontendActive = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue
 if (-not $FrontendActive) {
     Write-Host "Starting React App..." -ForegroundColor Yellow
-    # BROWSER=none stops React from opening a window automatically
+    # BROWSER=none stops React from opening a window automatically so we can handle it 'smartly'
     Start-Process powershell -WindowStyle Minimized -ArgumentList "-NoExit", "-Command", '$env:BROWSER="none"; npm start'
     
     Write-Host "Waiting for React to initialize..."
@@ -81,20 +81,23 @@ if (-not $FrontendActive) {
 
 Write-Host "--- 3. SMART BROWSER LAUNCH ---" -ForegroundColor Cyan
 
-# --- SMART DETECTION LOGIC ---
-# We check if there is an ESTABLISHED connection to Port 3000.
-# If yes, it means your browser is already open and talking to the server.
-$TabAlreadyOpen = Get-NetTCPConnection -LocalPort 3000 -State Established -ErrorAction SilentlyContinue
+# --- FIXED SMART LOGIC (From previous step) ---
+# This ensures we only detect CHROME connected to the React app, preventing false positives from Node/VS Code.
+$ChromeIsConnected = Get-NetTCPConnection -RemotePort 3000 -State Established -ErrorAction SilentlyContinue | Where-Object { 
+    $Proc = Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue
+    # Only return true if the process connected to 3000 is actually Chrome
+    return ($Proc.ProcessName -eq "chrome")
+}
 
-if ($TabAlreadyOpen) {
-    Write-Host "React tab detected as OPEN. Switching focus..." -ForegroundColor Green
+if ($ChromeIsConnected) {
+    Write-Host "Chrome tab detected as OPEN. Switching focus..." -ForegroundColor Green
     # Find the main Chrome window and bring it to the front
     $ChromeProc = Get-Process chrome -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
     if ($ChromeProc) {
         [WindowUtils]::SetForegroundWindow($ChromeProc.MainWindowHandle) | Out-Null
     }
 } else {
-    Write-Host "No active tab detected. Launching new Chrome window..." -ForegroundColor Green
+    Write-Host "App is running but no Chrome tab found. Launching new window..." -ForegroundColor Green
     Start-Process "http://localhost:3000"
 }
 

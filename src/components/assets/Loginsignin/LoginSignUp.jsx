@@ -1,13 +1,11 @@
+// src/components/assets/Loginsignin/LoginSignUp.jsx
+
 import React, { useState } from 'react';
 import './LoginSignUp.css';
 import MyBackgroundImage from './cdmBack.png'; 
 import Cdm from './cdmm.png';
 
-// Import the specific component for student number login
-// NOTE: Make sure the path below is correct for your project structure
-// import StudentLoginStudents from '../path/to/StudentLoginStudents'; 
-
-// FIREBASE IMPORTS (Auth and Firestore)
+// FIREBASE IMPORTS
 import { auth, db } from '../../../apiService'; 
 import { 
     signInWithEmailAndPassword, 
@@ -17,83 +15,39 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore'; 
 
-const LoginSignUp = ({ onLogin, history }) => { // Added history prop for navigation
+const LoginSignUp = ({ onLogin }) => { 
 
     const [isLoginView, setIsLoginView] = useState(true);
-    const [userRole, setUserRole] = useState('teacher'); // NEW: Default to teacher/general
+    
+    // Auth States
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
-    
     const [fullName, setFullName] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     
-    const [studentNumber, setStudentNumber] = useState(''); // NEW: For student login
-
-    // Function to clear states and switch the view
-    const switchView = (toLogin) => {
-        setIsLoginView(toLogin);
+    // UI States
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+    
+    // Function to clear states and switch the view (Login <-> Signup)
+    const switchView = () => {
+        setIsLoginView(!isLoginView);
         setError('');
         setFullName('');
         setEmail('');
         setPassword('');
         setConfirmPassword('');
-        setStudentNumber(''); // Clear student number on view switch
     };
     
-    // NEW: Function to handle role switch and clear credentials
-    const handleRoleSwitch = (role) => {
-        setUserRole(role);
-        switchView(true); // Always switch to login view upon role change
-    };
-
-    // NEW: Logic for Student Number Only Login
-    const handleStudentLogin = (e) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
-
-        if (!studentNumber) {
-            setError('Paki-fill up ang Student Number field.');
-            setLoading(false);
-            return;
-        }
-
-        // --- CORE REQUIREMENT: NAVIGATE TO StudentLoginStudents.jsx UI ---
-        // Assuming 'history' is passed from react-router-dom, or use a redirect function.
-        // If you are using React Router v6, you would use useNavigate().
-        // For demonstration, we'll log the action and use a placeholder.
-        console.log(`Student Login attempted with Student Number: ${studentNumber}`);
-        console.log("Navigating to StudentLoginStudents.jsx UI...");
-        
-        // **IMPLEMENT ACTUAL NAVIGATION HERE**
-        // Example: if using an old React Router:
-        // history.push('/student-login-students'); 
-        
-        // For this example, we'll just simulate success and stop loading.
-        // REMEMBER TO REMOVE THE TIMEOUT and implement actual navigation/API call.
-        setTimeout(() => {
-             setLoading(false);
-             // *** Replace with actual navigation to StudentLoginStudents component/route ***
-             // If this component IS the StudentLoginStudents.jsx, you'd call onLogin() here.
-             // If not, you need a router solution to switch components.
-             // For now, let's call a placeholder success action.
-             console.log("SUCCESS: Simulated redirect to StudentLoginStudents UI.");
-        }, 1000); 
-    };
-
     // --- LOGIC FOR GOOGLE SIGN-IN ---
     const handleGoogleSignIn = async () => {
-        // ... (Keep existing handleGoogleSignIn logic here)
         setError('');
         setLoading(true);
-
         const provider = new GoogleAuthProvider();
         
         try {
-            const result = await signInWithPopup(auth, provider);
-            console.log('Google Sign-In successful, calling onLogin()');
+            await signInWithPopup(auth, provider);
+            console.log('Google Sign-In successful');
             onLogin(); 
         } catch (firebaseError) {
             console.error("Google Sign-In Error: ", firebaseError);
@@ -106,30 +60,27 @@ const LoginSignUp = ({ onLogin, history }) => { // Added history prop for naviga
             setLoading(false);
         }
     };
-    // ------------------------------------
 
-
-    // --- LOGIC FOR EMAIL/PASSWORD LOGIN (for Teacher) ---
+    // --- LOGIC FOR EMAIL/PASSWORD LOGIN ---
     const handleLogin = async (e) => { 
-        // ... (Keep existing handleLogin logic here)
         e.preventDefault(); 
         setError('');
         setLoading(true);
 
         if (!email || !password) {
-            setError('Paki-fill up ang lahat ng Email at Password fields.');
+            setError('Please fill in both Email and Password.');
             setLoading(false);
             return;
         }
 
         try {
             await signInWithEmailAndPassword(auth, email, password);
-            console.log('Firebase Login successful, calling onLogin()');
+            console.log('Firebase Login successful');
             onLogin(); 
         } catch (firebaseError) {
             console.error('Login Failed:', firebaseError.message);
             if (firebaseError.code === 'auth/invalid-credential' || firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password') {
-                setError('Maling Email o Password. Pakitiyak ang iyong credentials.');
+                setError('Invalid Email or Password.');
             } else {
                 setError('Login failed: ' + firebaseError.message);
             }
@@ -138,9 +89,8 @@ const LoginSignUp = ({ onLogin, history }) => { // Added history prop for naviga
         }
     };
 
-    // --- LOGIC FOR SIGN UP (for Teacher/General) ---
+    // --- LOGIC FOR SIGN UP ---
     const handleSignUp = async (e) => {
-        // ... (Keep existing handleSignUp logic here)
         e.preventDefault();
         setError('');
         setLoading(true);
@@ -160,12 +110,12 @@ const LoginSignUp = ({ onLogin, history }) => { // Added history prop for naviga
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
+            // Create User Document in Firestore
             await setDoc(doc(db, "users", user.uid), {
                 uid: user.uid,
                 fullName: fullName,
                 email: email,
-                // Assign role based on current selected role for signup, or default to general/teacher
-                role: userRole === 'teacher' ? 'teacher' : 'general', 
+                role: 'teacher', // Defaulting to teacher since we removed the toggle
                 createdAt: new Date()
             });
 
@@ -183,112 +133,51 @@ const LoginSignUp = ({ onLogin, history }) => { // Added history prop for naviga
         }
     };
     
-    // --- JSX RENDER ---
-    const isStudentLogin = userRole === 'student' && isLoginView;
-    const isTeacherLogin = userRole === 'teacher' && isLoginView;
-    const isTeacherSignup = userRole === 'teacher' && !isLoginView;
-
     return (
        <div className="login-wrapper"
-       style={{
-           backgroundImage: `url(${MyBackgroundImage})`,
-           backgroundSize: 'cover',
-           backgroundPosition: 'center',
-           minHeight: '100vh',
-           padding: '2rem',
-       }}
-   >
-       <div className="container">
-            {/* Logo Area */}
-            <div className="logo-area">
-                <img src={Cdm} alt="Colegio de Montalban Logo" className="logo-image" />
-            </div>
-
-            {/* Auth Form Card */}
-            <div className="login-card">
-                
-                {/* 🎯 NEW: TEACHER/STUDENT TOGGLE */}
-                <div className="role-toggle">
-                    <button 
-                        className={`role-btn ${userRole === 'teacher' ? 'active' : ''}`}
-                        onClick={() => handleRoleSwitch('teacher')}
-                    >
-                        Teacher
-                    </button>
-                    <button 
-                        className={`role-btn ${userRole === 'student' ? 'active' : ''}`}
-                        onClick={() => handleRoleSwitch('student')}
-                    >
-                        Student
-                    </button>
+           style={{
+               backgroundImage: `url(${MyBackgroundImage})`,
+               backgroundSize: 'cover',
+               backgroundPosition: 'center',
+               minHeight: '100vh',
+               padding: '2rem',
+           }}
+       >
+           <div className="container">
+                {/* Logo Area */}
+                <div className="logo-area">
+                    <img src={Cdm} alt="Colegio de Montalban Logo" className="logo-image" />
                 </div>
-                {/* ---------------------------------- */}
 
-                <h2>{isLoginView ? 'Please login!' : 'Create Account'}</h2>
-                
-                <p>
-                    {isStudentLogin 
-                        ? 'Enter your Student Number to access your dashboard.' 
-                        : isTeacherLogin 
-                        ? 'Access your student progress dashboard.' 
-                        : 'Join us and track your progress'}
-                </p>
-
-                <form onSubmit={isStudentLogin ? handleStudentLogin : (isLoginView ? handleLogin : handleSignUp)}> 
-
-                    {/* 🎯 STUDENT NUMBER FIELD (Only for Student Login) */}
-                    {isStudentLogin && (
-                        <div className="form-group">
-                            <label htmlFor="studentNumber">Student Number</label>
-                            <input
-                                type="text"
-                                id="studentNumber"
-                                placeholder="Enter your Student Number"
-                                required
-                                value={studentNumber}
-                                onChange={(e) => setStudentNumber(e.target.value)}
-                                autoFocus
-                            />
-                             
-                        </div>
-                        
-                        
-                    )}
-                    {isStudentLogin && (
-                    <>
-                        <div className="separator">Or continue with</div>
-                        <button 
-                             className="google-btn" 
-                             onClick={handleGoogleSignIn} 
-                             disabled={loading}
-                        >
-                             Sign in with Google
-                        </button>
-                    </>
-                )}
+                {/* Auth Form Card */}
+                <div className="login-card">
                     
+                    <h2>{isLoginView ? 'Professor Portal' : 'Create Account'}</h2>
                     
-                    
-                    {/* -------------------------------------------------- */}
+                    <p style={{marginBottom: '2rem'}}>
+                        {isLoginView 
+                            ? 'Welcome back! Please login to access your dashboard.' 
+                            : 'Join us and track your student progress'}
+                    </p>
 
+                    <form onSubmit={isLoginView ? handleLogin : handleSignUp}> 
 
-                    {/* FULL NAME INPUT (Only visible in Sign Up View) */}
-                    {isTeacherSignup && (
-                        <div className="form-group">
-                            <label htmlFor="fullName">Full Name</label>
-                            <input
-                                type="text"
-                                id="fullName"
-                                placeholder="Ex. Juan Dela Cruz"
-                                required
-                                value={fullName}
-                                onChange={(e) => setFullName(e.target.value)}
-                            />
-                        </div>
-                    )}
+                        {/* FULL NAME (Sign Up Only) */}
+                        {!isLoginView && (
+                            <div className="form-group">
+                                <label htmlFor="fullName">Full Name</label>
+                                <input
+                                    type="text"
+                                    id="fullName"
+                                    placeholder="Ex. Juan Dela Cruz"
+                                    required
+                                    value={fullName}
+                                    onChange={(e) => setFullName(e.target.value)}
+                                />
+                            </div>
+                        )}
 
-                    {/* EMAIL FIELD (Visible for Teacher Login/Signup) */}
-                    {(isTeacherLogin || isTeacherSignup) && (
+                        {/* EMAIL FIELD */}
                         <div className="form-group">
                             <label htmlFor="email">Email Address</label>
                             <input
@@ -301,10 +190,8 @@ const LoginSignUp = ({ onLogin, history }) => { // Added history prop for naviga
                                 onChange={(e) => setEmail(e.target.value)} 
                             />
                         </div>
-                    )}
 
-                    {/* PASSWORD FIELD (Visible for Teacher Login/Signup) */}
-                    {(isTeacherLogin || isTeacherSignup) && (
+                        {/* PASSWORD FIELD */}
                         <div className="form-group">
                             <label htmlFor="password">Password</label>
                             <input
@@ -317,72 +204,62 @@ const LoginSignUp = ({ onLogin, history }) => { // Added history prop for naviga
                                 onChange={(e) => setPassword(e.target.value)} 
                             />
                         </div>
-                    )}
-                    
-                    {/* CONFIRM PASSWORD INPUT (Only visible in Sign Up View) */}
-                    {isTeacherSignup && (
-                        <div className="form-group">
-                            <label htmlFor="confirmPassword">Confirm Password</label>
-                            <input
-                                type="password"
-                                id="confirmPassword"
-                                placeholder="Repeat your password"
-                                required
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                            />
-                        </div>
-                    )}
-
-                    {/* ERROR DISPLAY */}
-                    {error && (
-                        <div className="error-message">
-                            {error}
-                        </div>
-                    )}
-
-                    {/* OPTIONS ROW (Only visible in Teacher Login View) */}
-                    {isTeacherLogin && (
-                        <div className="options-row">
-                            <div className="remember-me">
-                                <input type="checkbox" id="remember" name="remember" />
-                                <label htmlFor="remember">Remember me</label>
+                        
+                        {/* CONFIRM PASSWORD (Sign Up Only) */}
+                        {!isLoginView && (
+                            <div className="form-group">
+                                <label htmlFor="confirmPassword">Confirm Password</label>
+                                <input
+                                    type="password"
+                                    id="confirmPassword"
+                                    placeholder="Repeat your password"
+                                    required
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                />
                             </div>
-                            <div className="forgot-password">
-                                <a href="/forgot-password">Forgot password?</a>
-                            </div>
-                        </div>
-                    )}
+                        )}
 
-                    <button type="submit" className="login-btn" disabled={loading}>
-                        {loading 
-                            ? (isLoginView ? 'Logging in...' : 'Creating Account...') 
-                            : (isLoginView ? 'Login' : 'Sign Up')
-                        }
-                    </button>
-                         {isTeacherLogin && (
-                    <>
+                        {/* ERROR DISPLAY */}
+                        {error && (
+                            <div className="error-message">
+                                {error}
+                            </div>
+                        )}
+
+                        {/* FORGOT PASSWORD LINK (Login Only) */}
+                        {isLoginView && (
+                            <div className="options-row" style={{justifyContent: 'flex-end'}}>
+                                <div className="forgot-password">
+                                    <a href="#forgot">Forgot password?</a>
+                                </div>
+                            </div>
+                        )}
+
+                        <button type="submit" className="login-btn" disabled={loading}>
+                            {loading 
+                                ? (isLoginView ? 'Logging in...' : 'Creating Account...') 
+                                : (isLoginView ? 'Login' : 'Sign Up')
+                            }
+                        </button>
+
                         <div className="separator">Or continue with</div>
+                        
                         <button 
+                             type="button"
                              className="google-btn" 
                              onClick={handleGoogleSignIn} 
                              disabled={loading}
                         >
                              Sign in with Google
                         </button>
-                    </>
-                )}
-                </form>
+                    </form>
 
-               
-             
-                
-                {/* SWITCH BUTTON AREA (Only visible for Teacher/General) */}
-                {userRole === 'teacher' && (
+                    {/* SWITCH VIEW BUTTON */}
                     <div className="signup-area">
                         <p>{isLoginView ? "Don't have an account?" : "Already have an account?"}</p>
                         <button 
-                             onClick={() => switchView(!isLoginView)}
+                             onClick={switchView}
                              style={{ 
                                  background: 'none', 
                                  border: 'none', 
@@ -398,10 +275,9 @@ const LoginSignUp = ({ onLogin, history }) => { // Added history prop for naviga
                              {isLoginView ? 'Sign up' : 'Login here'}
                         </button>
                     </div>
-                )}
-            </div>
+                </div>
+           </div>
        </div>
-   </div>
     );
 };
 

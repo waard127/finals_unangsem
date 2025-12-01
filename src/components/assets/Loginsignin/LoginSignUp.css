@@ -1,12 +1,14 @@
+/* src/components/assets/Loginsignin/LoginSignUp.css */
+
 /* 1. Wrapper at Background */
 .login-wrapper {
     display: flex;
-    justify-content: center; /* I-center ang container horizontally */
-    align-items: center; /* I-center ang container vertically */
+    justify-content: center;
+    align-items: center;
     min-height: 100vh;
     width: 100%;
     position: relative;
-    /* Ang actual background image ay nasa inline style sa JSX */
+    /* Background image is inline in JSX */
 }
 
 /* 2. Main Content Container */
@@ -22,7 +24,6 @@
 
 /* 3. Logo Area Positioning */
 .logo-area {
-    /* Absolute position para lumutang ang logo sa background at nasa kaliwa ng form */
     position: absolute;
     top: 50%;
     left: 5%; 
@@ -37,44 +38,57 @@
 
 /* 4. Login Form Card Styling */
 .login-card {
-    /* Ang kulay ng form card (parang light beige) */
-    background-color: rgba(240, 240, 230, 0.9); 
+    background-color: rgba(240, 240, 230, 0.95); /* Slightly increased opacity for better readability */
     padding: 2.5rem 3rem;
     border-radius: 20px; 
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     width: 100%;
-    max-width: 400px; /* sa kapal ng form card to */
-    margin-left: auto; /* ilalagay to sa kanan haha (kung nasa flex container) */
+    max-width: 400px;
+    margin-left: auto;
     z-index: 20;
 }
 
 /* 5. Form Elements */
 h2 {
-    color: #333;
+    color: #1F2937;
     text-align: center;
     margin-bottom: 0.5rem;
+    font-weight: 800;
 }
 
 p {
     color: #666;
     text-align: center;
     margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
 }
 
 .form-group label {
     display: block;
     margin-bottom: 0.3rem;
-    font-weight: 500;
-    color: #333;
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.9rem;
 }
 
 .form-group input {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    border: 1px solid #D1D5DB;
+    border-radius: 8px;
     box-sizing: border-box; 
-    font-size: 1rem;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #38761d;
+    box-shadow: 0 0 0 3px rgba(56, 118, 29, 0.1);
 }
 
 .options-row {
@@ -86,8 +100,9 @@ p {
 }
 
 .forgot-password a {
-    color: #007bff;
+    color: #3B82F6;
     text-decoration: none;
+    font-weight: 500;
 }
 
 .login-btn {
@@ -96,15 +111,22 @@ p {
     background-color: #38761d; 
     color: white;
     border: none;
-    border-radius: 5px;
-    font-size: 1.1rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.2s;
     margin-bottom: 1rem;
+    margin-top: 0.5rem;
 }
 
 .login-btn:hover {
     background-color: #275d13;
+}
+
+.login-btn:disabled {
+    background-color: #6b7280;
+    cursor: not-allowed;
 }
 
 /* 6. Separator */
@@ -112,8 +134,8 @@ p {
     display: flex;
     align-items: center;
     text-align: center;
-    color: #777;
-    font-size: 0.9rem;
+    color: #9CA3AF;
+    font-size: 0.85rem;
     margin: 1rem 0;
 }
 
@@ -122,7 +144,7 @@ p {
     content: '';
     flex-grow: 1;
     height: 1px;
-    background: #ccc;
+    background: #E5E7EB;
     margin: 0 10px;
 }
 
@@ -134,78 +156,72 @@ p {
     width: 100%;
     padding: 0.8rem;
     background-color: white;
-    color: #444;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 1rem;
+    color: #374151;
+    border: 1px solid #D1D5DB;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.2s;
     margin-bottom: 1.5rem;
 }
 
 .google-btn:hover {
-    background-color: #f0f0f0;
+    background-color: #F9FAFB;
 }
 
 /* 8. Sign Up Area */
 .signup-area {
     text-align: center;
     font-size: 0.9rem;
+    margin-top: 1rem;
 }
 
 .signup-area p {
     display: inline;
     margin: 0;
-    color: #555;
+    color: #6B7280;
 }
 
-.signup-area a {
-    color: #007bff; 
+.signup-area button {
+    color: #3B82F6; 
     text-decoration: none;
-    font-weight: bold;
-}
-/* --- NEW STYLES FOR ROLE TOGGLE --- */
-
-.role-toggle {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
-    background-color: #e0e0e0; /* Light background for the container */
-    border-radius: 20px;
-    padding: 3px;
-    width: fit-content;
-    margin-left: auto;
-    margin-right: auto;
+    font-weight: 700;
 }
 
-.role-btn {
-    border: none;
-    padding: 8px 20px;
-    margin: 0;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #666; /* Default text color */
-    background: transparent;
-    transition: all 0.3s ease;
-    border-radius: 18px; /* Rounded corners for buttons */
-}
-
-.role-btn.active {
-    color: white; /* Active text color */
-    background-color: #5c8b5c; /* Darker green background for active state (matching your login button) */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-/* Optional: Make error message look cleaner */
+/* Error Message */
 .error-message {
-    color: #FF0000; 
+    color: #DC2626; 
     text-align: center; 
     margin-bottom: 1rem; 
-    font-weight: bold;
-    padding: 0.5rem;
-    border: 1px solid #FFCCCC;
-    border-radius: 5px;
-    background-color: #FFF0F0;
-    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.75rem;
+    border: 1px solid #FECACA;
+    border-radius: 8px;
+    background-color: #FEF2F2;
+    font-size: 0.85rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+        height: auto;
+    }
+    
+    .logo-area {
+        position: static;
+        transform: none;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    
+    .logo-image {
+        width: 150px;
+    }
+    
+    .login-card {
+        margin: 0;
+        padding: 2rem;
+    }
 }

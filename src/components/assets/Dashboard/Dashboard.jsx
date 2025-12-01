@@ -1,6 +1,6 @@
 // src/components/assets/Dashboard/Dashboard.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react'; // Added useRef
 import { Sidebar, SIDEBAR_DEFAULT_WIDTH } from './Sidebar.jsx';
 
 // --- ICONS ---
@@ -155,8 +155,9 @@ const Dashboard = ({ onLogout, onPageChange, profileData }) => {
     const [isDesktopMode, setIsDesktopMode] = useState(window.innerWidth >= 1024);
     const [sidebarWidth, setSidebarWidth] = useState(isDesktopMode ? SIDEBAR_DEFAULT_WIDTH : 0);
     
-    // --- NEW: Voice Command State ---
+    // --- VOICE RECOGNITION STATES ---
     const [isVoiceActive, setIsVoiceActive] = useState(false);
+    const recognitionRef = useRef(null);
 
     useEffect(() => {
         const handleResize = () => {
@@ -165,22 +166,95 @@ const Dashboard = ({ onLogout, onPageChange, profileData }) => {
             if (!isDesktop) setSidebarWidth(0);
         };
         window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
+        
+        // --- SETUP SPEECH RECOGNITION ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    const handleWidthChange = (newWidth) => {
-        if (isDesktopMode) setSidebarWidth(newWidth);
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true; // Keep listening until stopped
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+
+            recognition.onresult = (event) => {
+                const lastResultIndex = event.results.length - 1;
+                const transcript = event.results[lastResultIndex][0].transcript.trim().toLowerCase();
+                console.log("Voice Command Detected:", transcript);
+                
+                // Execute Logic
+                processVoiceCommand(transcript);
+            };
+
+            recognition.onend = () => {
+                // If it stops but state is still active (e.g., silence), restart it
+                // Note: We avoid infinite loops by checking state
+                if (recognitionRef.current && isVoiceActive) {
+                    // recognition.start(); // Uncomment for aggressive "always on" listening
+                    // For now, let's allow it to stop naturally or be toggled manually
+                    setIsVoiceActive(false); 
+                }
+            };
+
+            recognitionRef.current = recognition;
+        }
+
+        return () => {
+            // Cleanup on unmount
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+            }
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // --- COMMAND PROCESSOR ---
+    const processVoiceCommand = (command) => {
+        // 1. Navigation Commands
+        if (command.includes('dashboard') || command.includes('home')) {
+            onPageChange('dashboard');
+        } else if (command.includes('report') || command.includes('grades') || command.includes('analytics')) {
+            onPageChange('reports');
+        } else if (command.includes('profile') || command.includes('settings') || command.includes('account')) {
+            onPageChange('profile');
+        } else if (command.includes('student') || command.includes('view students') || command.includes('list')) {
+            onPageChange('view-studs');
+        } 
+        
+        // 2. Scroll Commands
+        else if (command.includes('scroll down') || command.includes('go down')) {
+            window.scrollBy({ top: 500, behavior: 'smooth' });
+        } else if (command.includes('scroll up') || command.includes('go up')) {
+            window.scrollBy({ top: -500, behavior: 'smooth' });
+        }
+        
+        // 3. Stop Command
+        else if (command.includes('stop') || command.includes('exit') || command.includes('cancel')) {
+            toggleVoiceCommand(); // Turn it off
+        }
     };
 
     // Toggle Voice Mode
     const toggleVoiceCommand = () => {
-        setIsVoiceActive(!isVoiceActive);
-        if (!isVoiceActive) {
-            console.log("Voice Command Activated");
-            // Future logic for voice activation goes here
-        } else {
-            console.log("Voice Command Deactivated");
+        if (!recognitionRef.current) {
+            alert("Voice Control not supported in this browser (Try Chrome).");
+            return;
         }
+
+        if (isVoiceActive) {
+            recognitionRef.current.stop();
+            setIsVoiceActive(false);
+        } else {
+            try {
+                recognitionRef.current.start();
+                setIsVoiceActive(true);
+            } catch (error) {
+                console.error("Mic Error:", error);
+            }
+        }
+    };
+
+    const handleWidthChange = (newWidth) => {
+        if (isDesktopMode) setSidebarWidth(newWidth);
     };
 
     return (
@@ -261,7 +335,7 @@ const Dashboard = ({ onLogout, onPageChange, profileData }) => {
                     {/* Right Icons */}
                     <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
                         
-                        {/* --- NEW: Interactive Mic Button --- */}
+                        {/* --- INTERACTIVE MIC BUTTON --- */}
                         <button 
                             onClick={toggleVoiceCommand}
                             className={isVoiceActive ? 'mic-btn-active' : ''}
@@ -275,7 +349,7 @@ const Dashboard = ({ onLogout, onPageChange, profileData }) => {
                                 justifyContent: 'center',
                                 transition: 'all 0.3s ease'
                             }}
-                            title={isVoiceActive ? "Deactivate Voice Command" : "Activate Voice Command"}
+                            title={isVoiceActive ? "Listening... (Say 'Stop' to end)" : "Activate Voice Command"}
                         >
                             <Mic style={{ width: '1.5rem', height: '1.5rem', color: isVoiceActive ? 'inherit' : '#4B5563' }} />
                         </button>

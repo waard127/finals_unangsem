@@ -296,3 +296,35 @@
     background-color: var(--color-primary-hover);
     transform: scale(1.05);
 }
+
+/* --- CUSTOM SCROLLBAR (Sleek & Branded) --- */
+
+/* Width and Height */
+::-webkit-scrollbar {
+    width: 8px;  /* Width for vertical scrollbars */
+    height: 8px; /* Height for horizontal scrollbars (tables) */
+}
+
+/* Track (Background) */
+::-webkit-scrollbar-track {
+    background: transparent; /* Makes it invisible so it floats over the cream bg */
+}
+
+/* Handle (The moving part) */
+::-webkit-scrollbar-thumb {
+    background-color: rgba(56, 118, 29, 0.3); /* Your Brand Green (faint) */
+    border-radius: 10px; /* Rounded pill shape */
+    transition: background-color 0.2s ease;
+}
+
+/* Handle on Hover */
+::-webkit-scrollbar-thumb:hover {
+    background-color: #38761d; /* Your Brand Green (Solid) */
+    cursor: pointer;
+}
+
+/* Firefox Support */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(56, 118, 29, 0.3) transparent;
+}

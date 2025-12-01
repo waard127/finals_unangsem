@@ -1,10 +1,10 @@
 // src/components/assets/Dashboard/Dashboard.jsx
 
 import React, { useState, useEffect } from 'react';
-import { Sidebar, SIDEBAR_EXPANDED_WIDTH } from './Sidebar.jsx';
+import { Sidebar, SIDEBAR_DEFAULT_WIDTH } from './Sidebar.jsx'; // Changed import to match ReportsLayout
 
 // --- ICONS ---
-const SearchIcon = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>);
+const SearchIcon = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>);
 const Bell = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.36 17a3 3 0 1 0 3.28 0"/></svg>);
 const Mic = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>);
 const HelpIcon = (props) => (
@@ -17,6 +17,7 @@ const HelpIcon = (props) => (
 const Users = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>);
 const BookOpen = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>);
 const ArrowRight = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>);
+const Menu = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>);
 
 // --- DATA ---
 const METRICS_DATA = [
@@ -68,13 +69,11 @@ const ClassCard = ({ data, onClick }) => (
     </div>
 );
 
-// --- ANIMATED GREETING COMPONENT (DYNAMIC TIME) ---
+// --- ANIMATED GREETING COMPONENT ---
 const GreetingSection = ({ profileData }) => {
     const [text, setText] = useState('');
-    
     const userName = profileData?.displayName || profileData?.fullName || 'Professor';
-
-    // --- NEW: Time-based logic ---
+    
     const getTimeBasedGreeting = () => {
         const hour = new Date().getHours();
         if (hour < 12) return 'Good Morning';
@@ -84,7 +83,6 @@ const GreetingSection = ({ profileData }) => {
 
     const fullText = `${getTimeBasedGreeting()}, ${userName}`; 
 
-    // Get initials for fallback avatar
     const getInitials = (name) => {
         const parts = name.split(' ');
         if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
@@ -94,13 +92,10 @@ const GreetingSection = ({ profileData }) => {
     const fallbackAvatar = `https://ui-avatars.com/api/?name=${getInitials(userName)}&background=38761d&color=fff&size=128&bold=true`;
     const avatarSrc = profileData?.photoURL || fallbackAvatar;
 
-    // Typing Logic
     useEffect(() => {
-        setText(''); // Reset immediately
-        
+        setText(''); 
         let currentString = '';
         let i = 0;
-
         const timer = setInterval(() => {
             if (i < fullText.length) {
                 currentString += fullText.charAt(i);
@@ -110,9 +105,8 @@ const GreetingSection = ({ profileData }) => {
                 clearInterval(timer);
             }
         }, 50);
-
         return () => clearInterval(timer);
-    }, [fullText]); // Re-run if fullText (time or name) changes
+    }, [fullText]); 
 
     return (
         <div style={{ 
@@ -122,44 +116,29 @@ const GreetingSection = ({ profileData }) => {
             gap: '1.5rem',
             animation: 'fadeIn 0.5s ease-in-out'
         }}>
-            {/* 1. Profile Picture with Ring */}
             <div style={{
                 position: 'relative',
-                width: '80px',
-                height: '80px',
+                width: '80px', height: '80px',
                 borderRadius: '50%',
-                border: '3px solid #38761d', // Green border matching theme
-                padding: '3px', // Spacing between border and image
+                border: '3px solid #38761d',
+                padding: '3px',
                 backgroundColor: 'white',
                 boxShadow: '0 4px 12px rgba(56, 118, 29, 0.2)'
             }}>
                 <img 
                     src={avatarSrc} 
                     alt="Profile" 
-                    style={{
-                        width: '100%',
-                        height: '100%',
-                        borderRadius: '50%',
-                        objectFit: 'cover'
-                    }}
+                    style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
                     onError={(e) => { e.target.onerror = null; e.target.src = fallbackAvatar; }}
                 />
             </div>
-
-            {/* 2. Typing Text */}
             <h1 style={{ 
-                fontSize: '2.25rem', 
-                fontWeight: '800', 
-                color: '#1F2937', 
-                margin: 0,
-                minHeight: '3rem', // Prevents layout shift while typing
-                display: 'flex',
-                alignItems: 'center'
+                fontSize: '2.25rem', fontWeight: '800', color: '#1F2937', 
+                margin: 0, minHeight: '3rem', display: 'flex', alignItems: 'center'
             }}>
                 {text}
                 <span className="blinking-cursor" style={{ color: '#38761d', marginLeft: '5px' }}>|</span>
             </h1>
-
             <style>
                 {`
                     @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
@@ -172,34 +151,100 @@ const GreetingSection = ({ profileData }) => {
 };
 
 const Dashboard = ({ onLogout, onPageChange, profileData }) => {
-    const isDesktopMode = window.innerWidth >= 1024;
+    // --- LAYOUT LOGIC (Exactly matching ReportsLayout.jsx) ---
     const [searchTerm, setSearchTerm] = useState('');
+    const [isDesktopMode, setIsDesktopMode] = useState(window.innerWidth >= 1024);
+    const [sidebarWidth, setSidebarWidth] = useState(isDesktopMode ? SIDEBAR_DEFAULT_WIDTH : 0);
+
+    useEffect(() => {
+        const handleResize = () => {
+            const isDesktop = window.innerWidth >= 1024;
+            setIsDesktopMode(isDesktop);
+            if (!isDesktop) setSidebarWidth(0);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const handleWidthChange = (newWidth) => {
+        if (isDesktopMode) setSidebarWidth(newWidth);
+    };
 
     return (
-        <div className="dashboard-layout">
-            <Sidebar onLogout={onLogout} onPageChange={onPageChange} currentPage="dashboard" onWidthChange={()=>{}} />
+        <div style={{ 
+            display: 'flex', 
+            minHeight: '100vh', 
+            backgroundColor: '#FDFDF5', /* MATCHED: Cream Background */
+            fontFamily: 'Inter, sans-serif'
+        }}>
+            <Sidebar 
+                onLogout={onLogout} 
+                onPageChange={onPageChange} 
+                currentPage="dashboard" 
+                onWidthChange={handleWidthChange} 
+            />
             
-            <main className="main-content" style={{ marginLeft: isDesktopMode ? SIDEBAR_EXPANDED_WIDTH : 0 }}>
-                {/* Header */}
-                <div className="dashboard-header">
-                    <div className="search-input-container">
-                        <SearchIcon className="search-icon" />
-                        <input 
-                            type="text" 
-                            className="search-input" 
-                            placeholder="Search students..." 
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
+            <main style={{ 
+                flexGrow: 1, 
+                // MATCHED PADDING: ReportsLayout uses '1.5rem 2rem' for desktop
+                padding: isDesktopMode ? '1.5rem 2rem' : '1rem',
+                marginLeft: isDesktopMode ? sidebarWidth : 0,
+                transition: 'margin-left 0.3s ease-in-out',
+                width: `calc(100% - ${isDesktopMode ? sidebarWidth : 0}px)`
+            }}>
+                
+                {/* --- HEADER (Structure exactly matches ReportsLayout) --- */}
+                <header style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    marginBottom: '2rem', 
+                    flexWrap: 'wrap',
+                    gap: '1rem',
+                    backgroundColor: 'transparent'
+                }}>
+                    
+                    {/* Search Bar Group */}
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', width: isDesktopMode ? 'auto' : '100%', flexGrow: 1, maxWidth: '600px' }}>
+                        {!isDesktopMode && (
+                            <button style={{ background: 'none', border: 'none', padding: '0', cursor: 'pointer' }}>
+                                <Menu style={{ width: '1.5rem', height: '1.5rem' }} />
+                            </button>
+                        )}
+                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
+                            <SearchIcon style={{ position: 'absolute', left: '1rem', width: '1.2rem', height: '1.2rem', color: '#9CA3AF' }} />
+                            <input
+                                type="text"
+                                placeholder="Search students..."
+                                style={{ 
+                                    paddingLeft: '3rem', 
+                                    paddingRight: '1rem', 
+                                    paddingTop: '0.75rem', 
+                                    paddingBottom: '0.75rem', 
+                                    border: '1px solid #E5E7EB', 
+                                    borderRadius: '8px', 
+                                    width: '100%', 
+                                    fontSize: '0.95rem',
+                                    backgroundColor: '#FFFFFF',
+                                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                                    outline: 'none'
+                                }}
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
                     </div>
-                    <div className="header-icon-group">
-                        <Mic className="header-icon" />
-                        <Bell className="header-icon" />
-                        <HelpIcon className="header-icon" title="Help & Support" />
-                    </div>
-                </div>
 
-                {/* --- GREETING SECTION --- */}
+                    {/* Right Icons */}
+                    <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+                        <Mic style={{ width: '1.5rem', height: '1.5rem', color: '#4B5563', cursor: 'pointer' }} />
+                        <Bell style={{ width: '1.5rem', height: '1.5rem', color: '#4B5563', cursor: 'pointer' }} />
+                        <HelpIcon style={{ width: '1.5rem', height: '1.5rem', color: '#4B5563', cursor: 'pointer' }} title="Help & Support" />
+                    </div>
+                </header>
+                {/* --- END HEADER --- */}
+
+                {/* --- CONTENT (Keeping your Dashboard content) --- */}
                 <GreetingSection profileData={profileData} />
 
                 {/* Filters Section */}

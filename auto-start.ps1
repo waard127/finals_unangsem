@@ -24,7 +24,7 @@ Write-Host "==========================================" -ForegroundColor Green
 
 # --- 0. PRE-FLIGHT CHECK ---
 if (-not (Test-Path "package.json")) {
-    Write-Host "❌ Error: package.json not found. Please run this script inside the project folder." -ForegroundColor Red
+    Write-Host "[X] Error: package.json not found. Please run this script inside the project folder." -ForegroundColor Red
     Start-Sleep -Seconds 5
     exit
 }
@@ -46,7 +46,7 @@ if (-not $MongoService -and -not (Get-Command "mongod" -ErrorAction SilentlyCont
     Write-Host "MongoDB not detected. Attempting install..." -ForegroundColor Yellow
     winget install --id "MongoDB.Server" -e --accept-source-agreements --accept-package-agreements
 } else {
-    Write-Host "✔ MongoDB is present." -ForegroundColor Gray
+    Write-Host "[OK] MongoDB is present." -ForegroundColor Gray
 }
 
 # Check Dependencies
@@ -60,7 +60,7 @@ Write-Host "`n--- 2. GENERATING VERSION INFO ---" -ForegroundColor Cyan
 if (Test-Path "generate-build-version.js") {
     node generate-build-version.js
 } else {
-    Write-Host "⚠ Warning: generate-build-version.js not found." -ForegroundColor Red
+    Write-Host "[!] Warning: generate-build-version.js not found." -ForegroundColor Red
 }
 
 # --- 3. SERVER STARTUP (BACKEND) ---
@@ -82,9 +82,9 @@ if (-not (Test-PortOpen 5000)) {
     } until ($BackendReady -or $Retries -gt 30)
     
     if ($BackendReady) {
-        Write-Host "`n✔ Backend is online!" -ForegroundColor Green
+        Write-Host "`n[OK] Backend is online!" -ForegroundColor Green
     } else {
-        Write-Host "`n❌ Backend failed to start. Check the 'CDM Backend Server' window for errors." -ForegroundColor Red
+        Write-Host "`n[X] Backend failed to start. Check the 'CDM Backend Server' window for errors." -ForegroundColor Red
         exit
     }
 } else {
@@ -110,7 +110,7 @@ if (-not (Test-PortOpen 3000)) {
     } until ($FrontendReady -or $Retries -gt 60) # React takes longer
     
     if ($FrontendReady) {
-         Write-Host "`n✔ Frontend is online!" -ForegroundColor Green
+         Write-Host "`n[OK] Frontend is online!" -ForegroundColor Green
     }
 } else {
     Write-Host "Frontend is already running." -ForegroundColor Gray
@@ -142,5 +142,5 @@ if ($ChromeConnected) {
     Start-Process $AppUrl
 }
 
-Write-Host "`n✅ SYSTEM READY!" -ForegroundColor Green
+Write-Host "`n[OK] SYSTEM READY!" -ForegroundColor Green
 Start-Sleep -Seconds 3

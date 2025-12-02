@@ -20,30 +20,65 @@ const generateStudentID = () => {
     return `${year}-${queue}`;
 };
 
-// --- SMART AI CONFIGURATION ---
-const API_MODEL = "gemini-2.0-flash"; 
+// --- DOM SCANNER (Method 1) ---
+const scanPageContent = () => {
+    // 1. Select interactive elements + headers for context
+    const selector = 'button, a, input, select, textarea, h1, h2, h3, h4';
+    const elements = document.querySelectorAll(selector);
+    const uiMap = [];
 
-const CDM_SYSTEM_PROMPT = `
+    // 2. Helper to get position (Top-Left, Bottom-Right, etc.)
+    const getPosition = (rect) => {
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height / 2;
+        const winW = window.innerWidth;
+        const winH = window.innerHeight;
+
+        const v = y < winH / 3 ? "Top" : y > (winH * 2) / 3 ? "Bottom" : "Center";
+        const h = x < winW / 3 ? "Left" : x > (winW * 2) / 3 ? "Right" : "Center";
+        return `${v}-${h}`; // e.g. "Top-Right"
+    };
+
+    elements.forEach((el) => {
+        // Exclude the chatbot itself so it doesn't read its own buttons
+        if (el.closest('.chatbot-container')) return;
+
+        const rect = el.getBoundingClientRect();
+        // Skip invisible elements
+        if (rect.width === 0 || rect.height === 0 || window.getComputedStyle(el).display === 'none') return;
+
+        // Extract meaningful text
+        let text = el.innerText || el.placeholder || el.getAttribute('aria-label') || el.value || "";
+        text = text.replace(/\s+/g, ' ').trim().substring(0, 60); // Clean up
+
+        if (text) {
+            uiMap.push({
+                type: el.tagName.toLowerCase(),
+                text: text,
+                location: getPosition(rect)
+            });
+        }
+    });
+
+    return uiMap;
+};
+
+// --- SYSTEM PROMPT ---
+const BASE_SYSTEM_PROMPT = `
 You are 'Cidi', the AI assistant for Colegio de Montalban.
 Be casual, use Taglish, and be helpful.
 
-**CRITICAL INSTRUCTION FOR AUTOMATION:**
-If the user asks to add a SPECIFIC student (e.g., "Add student named Josh with ID 23-12345"), do NOT reply with normal text.
-Instead, output a JSON object in this EXACT format:
-{
-  "action": "create_single_student",
-  "data": {
-    "name": "Extracted Name",
-    "id": "Extracted ID (if not provided, return null)",
-    "course": "Extracted Course (default to BSIT if missing)",
-    "section": "Extracted Section (default to 3D if missing)"
-  }
-}
+**CAPABILITIES:**
+1. **Automation:** If asked to add students, output JSON.
+2. **Navigation Guide:** I will provide you a list of "VISIBLE UI ELEMENTS" currently on the user's screen. Use this to tell the user *exactly* where buttons are (e.g. "It's on the Top-Right").
 
-If the user asks to "Add random student" or "Add 10 students", just reply with "TRIGGER_RANDOM" or "TRIGGER_BATCH_10" respectively.
-For normal questions, just chat normally.
+**AUTOMATION JSON FORMAT:**
+- For specific student: { "action": "create_single_student", "data": { "name": "...", "id": "...", "course": "..." } }
+- For 1 random: "TRIGGER_RANDOM"
+- For 10 random: "TRIGGER_BATCH_10"
 `;
 
+// --- UI COMPONENTS ---
 const TypewriterEffect = React.memo(({ text, onComplete }) => {
     const [displayedText, setDisplayedText] = useState('');
     useEffect(() => {
@@ -74,9 +109,10 @@ const TypewriterEffect = React.memo(({ text, onComplete }) => {
     return <p style={{ margin: 0, textAlign: 'left' }}>{renderFormatted(displayedText)}</p>;
 });
 
+// --- MAIN COMPONENT ---
 const CdmChatbot = ({ onPageChange }) => {
     const [isChatOpen, setIsChatOpen] = useState(false);
-    const [messages, setMessages] = useState([{ role: 'bot', text: "Hello! I am Cidi. You can say '**Add 10 random students**' or give me specific details like '**Add student named Josh Lander Ferrera**'." }]);
+    const [messages, setMessages] = useState([{ role: 'bot', text: "Hello! I am Cidi. I can see your screen structure. Ask me 'Where is the add button?' or tell me to add students!" }]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const chatEndRef = useRef(null);
@@ -87,7 +123,7 @@ const CdmChatbot = ({ onPageChange }) => {
 
     useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
 
-    // --- API HELPER: ADD STUDENT TO DB ---
+    // --- API & AUTOMATION ---
     const postStudentToDB = async (studentData) => {
         try {
             const response = await fetch('http://localhost:5000/api/students', {
@@ -100,65 +136,35 @@ const CdmChatbot = ({ onPageChange }) => {
                 window.dispatchEvent(event);
                 return true;
             }
-        } catch (err) {
-            console.error("DB Error:", err);
-        }
+        } catch (err) { console.error("DB Error:", err); }
         return false;
     };
 
-    // --- AUTOMATION: RANDOM GENERATOR ---
     const addRandomStudents = async (count) => {
         if (onPageChange) onPageChange('view-studs');
         await new Promise(resolve => setTimeout(resolve, 1500)); 
-
         let successCount = 0;
         const firstNames = ["James", "Mary", "John", "Patricia", "Robert", "Jennifer", "Michael", "Linda"];
         const lastNames = ["Cruz", "Santos", "Reyes", "Garcia", "Bautista", "Ocampo", "Gonzales", "Ramos"];
-
         for (let i = 0; i < count; i++) {
             const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
             const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-            
-            const studentData = {
-                id: generateStudentID(),
-                name: `${lastName}, ${firstName}`,
-                type: Math.random() > 0.2 ? 'Regular' : 'Irregular',
-                course: COURSES[Math.floor(Math.random() * COURSES.length)],
-                section: SECTIONS[Math.floor(Math.random() * SECTIONS.length)],
-                cell: '09' + Math.floor(Math.random() * 1000000000).toString(),
-                email: `${firstName.toLowerCase()}@student.cdm.edu.ph`,
-                address: 'Rodriguez, Rizal',
-                professorUid: 'MOCK_PROF_ID_123'
-            };
-
+            const studentData = { id: generateStudentID(), name: `${lastName}, ${firstName}`, type: Math.random() > 0.2 ? 'Regular' : 'Irregular', course: COURSES[Math.floor(Math.random() * COURSES.length)], section: SECTIONS[Math.floor(Math.random() * SECTIONS.length)], cell: '09' + Math.floor(Math.random() * 1000000000).toString(), email: `${firstName.toLowerCase()}@student.cdm.edu.ph`, address: 'Rodriguez, Rizal', professorUid: 'MOCK_PROF_ID_123' };
             if (await postStudentToDB(studentData)) successCount++;
             await new Promise(resolve => setTimeout(resolve, 500)); 
         }
         return successCount;
     };
 
-    // --- AUTOMATION: SPECIFIC STUDENT ---
     const addSpecificStudent = async (extractedData) => {
         if (onPageChange) onPageChange('view-studs');
         await new Promise(resolve => setTimeout(resolve, 1500));
-
-        const studentData = {
-            id: extractedData.id || generateStudentID(), 
-            name: extractedData.name, 
-            type: 'Regular',
-            course: extractedData.course || 'BSIT',
-            section: extractedData.section || '3D',
-            cell: '09123456789',
-            email: `${extractedData.name.replace(/\s+/g, '.').toLowerCase()}@student.cdm.edu.ph`,
-            address: 'Rodriguez, Rizal',
-            professorUid: 'MOCK_PROF_ID_123'
-        };
-
+        const studentData = { id: extractedData.id || generateStudentID(), name: extractedData.name, type: 'Regular', course: extractedData.course || 'BSIT', section: extractedData.section || '3D', cell: '09123456789', email: `${extractedData.name.replace(/\s+/g, '.').toLowerCase()}@student.cdm.edu.ph`, address: 'Rodriguez, Rizal', professorUid: 'MOCK_PROF_ID_123' };
         const success = await postStudentToDB(studentData);
         return success ? studentData : null;
     };
 
-    // --- AI CALL ---
+    // --- MAIN SEND LOGIC ---
     const handleSendMessage = useCallback(async () => {
         if (!input.trim() || isLoading) return;
         const userMessage = input.trim();
@@ -167,16 +173,33 @@ const CdmChatbot = ({ onPageChange }) => {
 
         setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
 
+        // 1. SCAN THE PAGE DYNAMICALLY
+        const uiMap = scanPageContent();
+        const uiContextString = uiMap.length > 0 
+            ? uiMap.map(el => `- [${el.type}] "${el.text}" is at ${el.location}`).join('\n')
+            : "No interactive elements found (might be loading or empty).";
+
+        // 2. INJECT SCAN INTO PROMPT
+        const dynamicPrompt = `
+${BASE_SYSTEM_PROMPT}
+
+**CURRENT VISIBLE UI ELEMENTS (REAL-TIME SCAN):**
+${uiContextString}
+
+**USER QUERY:**
+${userMessage}
+        `;
+
         const _token = _decryptSecureToken();
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${API_MODEL}:generateContent?key=${_token}`;
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${_token}`;
         
         try {
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    contents: [{ role: 'user', parts: [{ text: userMessage }] }],
-                    systemInstruction: { parts: [{ text: CDM_SYSTEM_PROMPT }] }
+                    contents: [{ role: 'user', parts: [{ text: userMessage }] }], // User message acts as trigger
+                    systemInstruction: { parts: [{ text: dynamicPrompt }] } // Context acts as instructions
                 })
             });
             
@@ -186,34 +209,16 @@ const CdmChatbot = ({ onPageChange }) => {
 
             if (cleanText === "TRIGGER_BATCH_10") {
                 setMessages(prev => [...prev, { role: 'bot', text: "On it! Generating 10 random students... 🚀" }]);
-                setTimeout(async () => {
-                    const count = await addRandomStudents(10);
-                    setMessages(prev => [...prev, { role: 'bot', text: `Done! Added **${count}** students.` }]);
-                }, 500);
-
+                setTimeout(async () => { const count = await addRandomStudents(10); setMessages(prev => [...prev, { role: 'bot', text: `Done! Added **${count}** students.` }]); }, 500);
             } else if (cleanText === "TRIGGER_RANDOM") {
                 setMessages(prev => [...prev, { role: 'bot', text: "Adding one random student... 👤" }]);
-                setTimeout(async () => {
-                    await addRandomStudents(1);
-                    setMessages(prev => [...prev, { role: 'bot', text: "Success! Student added." }]);
-                }, 500);
-
+                setTimeout(async () => { await addRandomStudents(1); setMessages(prev => [...prev, { role: 'bot', text: "Success! Student added." }]); }, 500);
             } else {
                 try {
                     const parsedData = JSON.parse(cleanText);
-                    
                     if (parsedData.action === "create_single_student" && parsedData.data) {
-                        const { name, id } = parsedData.data;
-                        setMessages(prev => [...prev, { role: 'bot', text: `Got it. Adding **${name}** ${id ? `with ID **${id}**` : ""}... ✍️` }]);
-                        
-                        setTimeout(async () => {
-                            const result = await addSpecificStudent(parsedData.data);
-                            if (result) {
-                                setMessages(prev => [...prev, { role: 'bot', text: `Successfully added **${result.name}** (${result.id}) to the database! ✅` }]);
-                            } else {
-                                setMessages(prev => [...prev, { role: 'bot', text: "Oops, database error." }]);
-                            }
-                        }, 500);
+                        setMessages(prev => [...prev, { role: 'bot', text: `Adding **${parsedData.data.name}**... ✍️` }]);
+                        setTimeout(async () => { const result = await addSpecificStudent(parsedData.data); if (result) { setMessages(prev => [...prev, { role: 'bot', text: `Added **${result.name}**! ✅` }]); } else { setMessages(prev => [...prev, { role: 'bot', text: "Database error." }]); } }, 500);
                     } else {
                         setMessages(prev => [...prev, { role: 'bot', text: aiText }]);    
                     }
@@ -221,11 +226,9 @@ const CdmChatbot = ({ onPageChange }) => {
                     setMessages(prev => [...prev, { role: 'bot', text: aiText }]);
                 }
             }
-
         } catch (error) {
             setMessages(prev => [...prev, { role: 'bot', text: "Network Error." }]);
         }
-
         setIsLoading(false);
     }, [input, isLoading, messages, onPageChange]); 
 
@@ -261,9 +264,7 @@ const CdmChatbot = ({ onPageChange }) => {
                             <span style={{ fontSize: '1.1rem', lineHeight: '1.2' }}>Cidi</span>
                             <span style={{ fontSize: '0.8rem', opacity: 0.85 }}>CDM-AI CHATBOT</span>
                         </div>
-                        <button onClick={() => setIsChatOpen(false)} style={{ display: 'flex' }}>
-                            <XIcon width="24" height="24" />
-                        </button>
+                        <button onClick={() => setIsChatOpen(false)} style={{ display: 'flex' }}><XIcon width="24" height="24" /></button>
                     </div>
                     <div className="chat-messages">
                         {messages.map((msg, idx) => (

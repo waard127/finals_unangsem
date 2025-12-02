@@ -11,7 +11,7 @@ import MultiPageGS from './components/assets/Dashboard/MultiPageGS.jsx';
 import VReports from './components/assets/Reports/VReports.jsx'; 
 import ViewRD from './components/assets/Reports/ViewRD.jsx'; 
 import LoadingAnimation from './components/assets/LoadingAnimation/LoadingAnimation.jsx'; 
-import Tributes from './components/assets/Tributes/Tributes.jsx'; // <--- NEW IMPORT
+import Tributes from './components/assets/Tributes/Tributes.jsx'; 
 import './App.css';
 
 import VoiceControl from './components/assets/Dashboard/VoiceControl.jsx';
@@ -28,21 +28,41 @@ function App() {
     const [isLoadingAuth, setIsLoadingAuth] = useState(true);
     const [profileData, setProfileData] = useState(null); 
     const [isDataReady, setIsDataReady] = useState(false); 
-
-    // --- VOICE STATE ---
     const [isVoiceActive, setIsVoiceActive] = useState(false);
 
-    useEffect(() => {
-        // Log Version
-        console.log(`%c Progress Tracker v${APP_VERSION} `, 'background: #38761d; color: white; padding: 4px; border-radius: 4px;');
-        console.log(`Build: ${BUILD_HASH} | Date: ${BUILD_DATE}`);
+    // --- SHARED SECTIONS STATE ---
+    const [sections, setSections] = useState([
+        { 
+            id: 1, 
+            name: 'BSIT 3D', 
+            subtitle: 'Introduction to Programming', 
+            students: 42, 
+            color: '#3B82F6',
+            coverImage: null // Default null means use color
+        },
+        { 
+            id: 2, 
+            name: 'BSCS 2A', 
+            subtitle: 'Information Assurance', 
+            students: 38, 
+            color: '#EAB308',
+            coverImage: null
+        },
+        { 
+            id: 3, 
+            name: 'BSCPE 4A', 
+            subtitle: 'Computer Interaction', 
+            students: 35, 
+            color: '#F97316',
+            coverImage: null
+        }
+    ]);
 
+    useEffect(() => {
+        console.log(`%c Progress Tracker v${APP_VERSION} `, 'background: #38761d; color: white; padding: 4px; border-radius: 4px;');
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
-                console.log("Firebase User detected:", firebaseUser.email);
                 setIsLoggedIn(true);
-                
-                // --- SYNC WITH MONGODB BACKEND ---
                 try {
                     const response = await fetch('http://localhost:5000/api/user-sync', {
                         method: 'POST',
@@ -54,138 +74,72 @@ function App() {
                             photoURL: firebaseUser.photoURL || "" 
                         })
                     });
-
-                    if (!response.ok) {
-                        throw new Error('Failed to sync user with backend');
-                    }
-
+                    if (!response.ok) throw new Error('Failed to sync');
                     const mongoProfile = await response.json();
-                    setProfileData({
-                        ...mongoProfile,
-                        id: mongoProfile.uid, 
-                        displayName: mongoProfile.displayName,
-                        photoURL: mongoProfile.photoURL || firebaseUser.photoURL
-                    });
-                    
+                    setProfileData({ ...mongoProfile, id: mongoProfile.uid, displayName: mongoProfile.displayName, photoURL: mongoProfile.photoURL || firebaseUser.photoURL });
                     setIsDataReady(true);
-
                 } catch (error) {
-                    console.error("Error fetching profile from MongoDB:", error);
-                    setProfileData({
-                        displayName: firebaseUser.displayName || 'Professor',
-                        email: firebaseUser.email,
-                        id: firebaseUser.uid,
-                        role: 'Offline Mode',
-                        photoURL: firebaseUser.photoURL
-                    });
+                    setProfileData({ displayName: firebaseUser.displayName || 'Professor', email: firebaseUser.email, id: firebaseUser.uid, role: 'Offline Mode', photoURL: firebaseUser.photoURL });
                     setIsDataReady(true);
                 }
-
             } else {
-                setIsLoggedIn(false);
-                setProfileData(null);
-                setIsDataReady(false); 
+                setIsLoggedIn(false); setProfileData(null); setIsDataReady(false); 
             }
             setIsLoadingAuth(false);
         });
-
         return () => unsubscribe();
     }, []);
 
-    const handleLoginSuccess = () => {
-        console.log("Login flow initiated.");
-    };
-
     const handleLogout = async () => {
-        try {
-            await firebaseSignOut(auth);
-            setProfileData(null);
-            setIsLoggedIn(false);
-            setIsVoiceActive(false); // Turn off voice on logout
-        } catch (error) {
-            console.error("Error during logout:", error);
-        }
+        try { await firebaseSignOut(auth); setProfileData(null); setIsLoggedIn(false); setIsVoiceActive(false); } catch (error) {}
     };
 
-    const handlePageChange = (page, params = {}) => {
-        setCurrentPage(page);
-        setPageParams(params); 
-    };
-
-    // Helper to toggle voice
-    const toggleVoice = (status) => {
-        setIsVoiceActive(status);
-    };
+    const handlePageChange = (page, params = {}) => { setCurrentPage(page); setPageParams(params); };
+    const toggleVoice = (status) => setIsVoiceActive(status);
 
     const renderMainContent = () => {
-        if (isLoadingAuth || !profileData || !isDataReady) {
-             return <LoadingAnimation isDataReady={isDataReady} />;
-        }
+        if (isLoadingAuth || !profileData || !isDataReady) return <LoadingAnimation isDataReady={isDataReady} />;
 
-        // Pass voice props to Dashboard
         const dashboardProps = {
             onLogout: handleLogout,
             onPageChange: handlePageChange,
             profileData: profileData,
             isVoiceActive: isVoiceActive,
-            onToggleVoice: () => toggleVoice(!isVoiceActive) 
+            onToggleVoice: () => toggleVoice(!isVoiceActive),
+            sections: sections 
+        };
+
+        const profileProps = {
+            onLogout: handleLogout,
+            onPageChange: handlePageChange,
+            profileData: profileData,
+            sections: sections, 
+            onUpdateSections: setSections 
         };
 
         switch (currentPage) {
-            case 'gradesheet':
-                return <Gradesheet onLogout={handleLogout} onPageChange={handlePageChange} />;
-            case 'multipage-gradesheet':
-                return (
-                    <MultiPageGS 
-                        onLogout={handleLogout} 
-                        onPageChange={handlePageChange} 
-                        viewType={pageParams.viewType || 'Attendance'} 
-                        title={pageParams.title || 'Attendance'}
-                        term={pageParams.term || ''}
-                    />
-                );
-            case 'view-studs':
-                return <ViewStuds onLogout={handleLogout} onPageChange={handlePageChange} />;
-            case 'reports':
-                return <ReportsLayout onLogout={handleLogout} onPageChange={handlePageChange} />;
-            case 'v-reports': 
-                return <VReports onLogout={handleLogout} onPageChange={handlePageChange} />;
-            case 'view-rd': 
-                return <ViewRD onLogout={handleLogout} onPageChange={handlePageChange} studentData={pageParams.student} />;
-            case 'profile':
-                return <ProfileLayout onLogout={handleLogout} onPageChange={handlePageChange} profileData={profileData} />; 
-            case 'tributes': 
-                return <Tributes onLogout={handleLogout} onPageChange={handlePageChange} />; // <--- NEW ROUTE
-            case 'dashboard':
-            default:
-                return <Dashboard {...dashboardProps} />;
+            case 'gradesheet': return <Gradesheet onLogout={handleLogout} onPageChange={handlePageChange} />;
+            case 'multipage-gradesheet': return <MultiPageGS onLogout={handleLogout} onPageChange={handlePageChange} {...pageParams} />;
+            case 'view-studs': return <ViewStuds onLogout={handleLogout} onPageChange={handlePageChange} />;
+            case 'reports': return <ReportsLayout onLogout={handleLogout} onPageChange={handlePageChange} />;
+            case 'v-reports': return <VReports onLogout={handleLogout} onPageChange={handlePageChange} />;
+            case 'view-rd': return <ViewRD onLogout={handleLogout} onPageChange={handlePageChange} studentData={pageParams.student} />;
+            case 'profile': return <ProfileLayout {...profileProps} />; 
+            case 'tributes': return <Tributes onLogout={handleLogout} onPageChange={handlePageChange} />;
+            case 'dashboard': default: return <Dashboard {...dashboardProps} />;
         }
     };
-
-    const showChatbot = isLoggedIn && profileData && isDataReady;
 
     if (isLoggedIn) {
         return (
              <div className="dashboard-container">
-                 {/* Voice Control Global Overlay */}
-                 <VoiceControl 
-                    isVoiceActive={isVoiceActive} 
-                    onToggle={toggleVoice} 
-                    onPageChange={handlePageChange} 
-                 />
-
+                 <VoiceControl isVoiceActive={isVoiceActive} onToggle={toggleVoice} onPageChange={handlePageChange} />
                  {renderMainContent()}
-
-                 {/* Pass onPageChange to Chatbot for Automation */}
-                 {showChatbot && <CdmChatbot onPageChange={handlePageChange} />} 
+                 <CdmChatbot onPageChange={handlePageChange} /> 
              </div>
         );
     } else {
-        return (
-            <div className="login-page-container">
-                <LoginSignUp onLogin={handleLoginSuccess} />
-            </div>
-        );
+        return <div className="login-page-container"><LoginSignUp onLogin={()=>{}} /></div>;
     }
 }
 

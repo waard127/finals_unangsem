@@ -2,10 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Profile from './Profile.jsx';
-import { 
-    Sidebar, 
-    SIDEBAR_DEFAULT_WIDTH, 
-} from '../Dashboard/Sidebar.jsx'; 
+import { Sidebar, SIDEBAR_DEFAULT_WIDTH } from '../Dashboard/Sidebar.jsx'; 
 
 // --- ICONS ---
 const Menu = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>);
@@ -19,7 +16,8 @@ const HelpIcon = (props) => (
 );
 const Bell = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.36 17a3 3 0 1 0 3.28 0"/></svg>);
 
-const ProfileLayout = ({ onLogout, onPageChange, profileData }) => { 
+// Accepts sections and onUpdateSections from App.js
+const ProfileLayout = ({ onLogout, onPageChange, profileData, sections, onUpdateSections }) => { 
     const [searchTerm, setSearchTerm] = useState('');
     const [isDesktopMode, setIsDesktopMode] = useState(window.innerWidth >= 1024);
     const [sidebarWidth, setSidebarWidth] = useState(isDesktopMode ? SIDEBAR_DEFAULT_WIDTH : 0);
@@ -42,7 +40,7 @@ const ProfileLayout = ({ onLogout, onPageChange, profileData }) => {
         <div style={{ 
             display: 'flex', 
             minHeight: '100vh', 
-            backgroundColor: '#FDFDF5', /* MATCHED: Cream Background */
+            backgroundColor: '#FDFDF5', 
             fontFamily: 'Inter, sans-serif'
         }}>
             <Sidebar 
@@ -59,7 +57,8 @@ const ProfileLayout = ({ onLogout, onPageChange, profileData }) => {
                 transition: 'margin-left 0.3s ease-in-out',
                 width: `calc(100% - ${isDesktopMode ? sidebarWidth : 0}px)`
             }}>
-                {/* MATCHED: Header Style from ReportsLayout (Transparent + Floating Search) */}
+                
+                {/* Header */}
                 <header style={{ 
                     display: 'flex', 
                     justifyContent: 'space-between', 
@@ -104,7 +103,12 @@ const ProfileLayout = ({ onLogout, onPageChange, profileData }) => {
                     </div>
                 </header>
 
-                <Profile profileData={profileData} /> 
+                {/* Pass props down to Profile */}
+                <Profile 
+                    profileData={profileData} 
+                    sections={sections} 
+                    onUpdateSections={onUpdateSections} 
+                /> 
             </main>
         </div>
     );

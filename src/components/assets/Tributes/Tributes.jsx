@@ -13,22 +13,38 @@ const CodeIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
 );
 
+// --- COLOR PALETTE FOR RANDOMIZATION ---
+const COLORS = [
+    "#F59E0B", // Amber
+    "#10B981", // Emerald
+    "#3B82F6", // Blue
+    "#6366F1", // Indigo
+    "#8B5CF6", // Violet
+    "#EC4899", // Pink
+    "#EF4444", // Red
+    "#06B6D4", // Cyan
+    "#F97316"  // Orange
+];
+
+const getRandomColor = () => COLORS[Math.floor(Math.random() * COLORS.length)];
+
 // --- TEAM DATA ---
+// All roles set to "Developer" and colors are randomized
 const TEAM_MEMBERS = [
-    { name: "Jona Mae Obordo", role: "Group Creator / Leader", color: "#F59E0B" }, // Gold
-    { name: "Josh Lander Ferrera", role: "Lead Developer", color: "#10B981" }, // Green
-    { name: "Marvhenne Klein Ortega", role: "Developer", color: "#3B82F6" }, // Blue
-    { name: "Edward Marcelino", role: "Developer", color: "#3B82F6" },
-    { name: "Jazon Williams Chang", role: "Developer", color: "#3B82F6" },
-    { name: "Marry Ann Nedia", role: "Developer", color: "#3B82F6" },
-    { name: "Shamell", role: "Developer", color: "#3B82F6" },
-    { name: "Vhvancca Tablon", role: "Developer", color: "#3B82F6" },
+    { name: "Jona Mae Obordo", role: "Developer", color: getRandomColor() },
+    { name: "Josh Lander Ferrera", role: "Developer", color: getRandomColor() },
+    { name: "Marvhenne Klein Ortega", role: "Developer", color: getRandomColor() },
+    { name: "Edward Marcelino", role: "Developer", color: getRandomColor() },
+    { name: "Jazon Williams Chang", role: "Developer", color: getRandomColor() },
+    { name: "Marry Ann Nedia", role: "Developer", color: getRandomColor() },
+    { name: "Shamell", role: "Developer", color: getRandomColor() },
+    { name: "Vhvancca Tablon", role: "Developer", color: getRandomColor() },
 ];
 
 const Tributes = ({ onLogout, onPageChange }) => {
     const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT_WIDTH);
     
-    // Resize logic to match Dashboard
+    // Resize logic
     useEffect(() => {
         const handleResize = () => {
             const isDesktop = window.innerWidth >= 1024;
@@ -63,10 +79,7 @@ const Tributes = ({ onLogout, onPageChange }) => {
                     {TEAM_MEMBERS.map((member, index) => (
                         <div key={index} className="trib-card">
                             <div className="trib-avatar-container">
-                                {/* IMAGE PLACEHOLDER LOGIC: 
-                                    Currently using UI Avatars API. 
-                                    To use real images: <img src={require('./path/to/image.jpg')} ... /> 
-                                */}
+                                {/* Using randomized color for the avatar background */}
                                 <img 
                                     src={`https://ui-avatars.com/api/?name=${member.name}&background=${member.color.replace('#','')}&color=fff&size=128&bold=true`} 
                                     alt={member.name} 

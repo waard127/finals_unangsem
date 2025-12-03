@@ -1,3 +1,5 @@
+// src/Apps.jsx
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 // --- ICONS ---
@@ -194,26 +196,40 @@ ${userMessage}
             });
             
             const result = await response.json();
-            let aiText = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
-            const cleanText = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
-
-            if (cleanText === "TRIGGER_BATCH_10") {
+            const aiText = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            
+            // --- UPDATED PARSING LOGIC TO HANDLE EXTRA TEXT ---
+            
+            // 1. Check if trigger exists ANYWHERE in the response
+            if (aiText.includes("TRIGGER_BATCH_10")) {
                 setMessages(prev => [...prev, { role: 'bot', text: "On it! Generating 10 random students... 🚀" }]);
                 setTimeout(async () => { const count = await addRandomStudents(10); setMessages(prev => [...prev, { role: 'bot', text: `Done! Added **${count}** students.` }]); }, 500);
-            } else if (cleanText === "TRIGGER_RANDOM") {
+            } 
+            else if (aiText.includes("TRIGGER_RANDOM")) {
                 setMessages(prev => [...prev, { role: 'bot', text: "Adding one random student... 👤" }]);
                 setTimeout(async () => { await addRandomStudents(1); setMessages(prev => [...prev, { role: 'bot', text: "Success! Student added." }]); }, 500);
-            } else {
-                try {
-                    const parsedData = JSON.parse(cleanText);
-                    if (parsedData.action === "create_single_student" && parsedData.data) {
-                        setMessages(prev => [...prev, { role: 'bot', text: `Adding **${parsedData.data.name}**... ✍️` }]);
-                        setTimeout(async () => { const result = await addSpecificStudent(parsedData.data); if (result) { setMessages(prev => [...prev, { role: 'bot', text: `Added **${result.name}**! ✅` }]); } else { setMessages(prev => [...prev, { role: 'bot', text: "Database error." }]); } }, 500);
-                    } else {
-                        setMessages(prev => [...prev, { role: 'bot', text: aiText }]);    
+            } 
+            else {
+                // 2. Extract JSON object from conversational text using Regex
+                const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+                let actionFound = false;
+
+                if (jsonMatch) {
+                    try {
+                        const parsedData = JSON.parse(jsonMatch[0]);
+                        if (parsedData.action === "create_single_student" && parsedData.data) {
+                            actionFound = true;
+                            setMessages(prev => [...prev, { role: 'bot', text: `Adding **${parsedData.data.name}**... ✍️` }]);
+                            setTimeout(async () => { const result = await addSpecificStudent(parsedData.data); if (result) { setMessages(prev => [...prev, { role: 'bot', text: `Added **${result.name}**! ✅` }]); } else { setMessages(prev => [...prev, { role: 'bot', text: "Database error." }]); } }, 500);
+                        }
+                    } catch (e) {
+                        console.error("JSON parse failed", e);
                     }
-                } catch (e) {
-                    setMessages(prev => [...prev, { role: 'bot', text: aiText }]);
+                }
+                
+                // 3. Fallback: Just show text if no action found
+                if (!actionFound) {
+                    setMessages(prev => [...prev, { role: 'bot', text: aiText }]);    
                 }
             }
         } catch (error) {

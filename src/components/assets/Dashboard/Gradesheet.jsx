@@ -132,8 +132,6 @@ const Gradesheet = ({ onLogout, onPageChange }) => {
                                 {/* --- MIDTERM COLUMNS --- */}
                                 <th><button className="gs-pill gs-pill-green gs-pill-clickable" onClick={() => handleHeaderClick('Attendance', 'Attendance', 'Midterm')}>Attendance</button></th>
                                 <th><button className="gs-pill gs-pill-green gs-pill-clickable" onClick={() => handleHeaderClick('Assignment', 'Activity', 'Midterm')}>Assignment</button></th>
-                                <th><button className="gs-pill gs-pill-green gs-pill-clickable" onClick={() => handleHeaderClick('Quiz', 'Activity', 'Midterm')}>Quizzes</button></th>
-                                <th><button className="gs-pill gs-pill-green gs-pill-clickable" onClick={() => handleHeaderClick('Activity', 'Activity', 'Midterm')}>Activity</button></th>
                                 <th>Midterm</th>
                                 
                                 {/* --- FINALS COLUMNS --- */}

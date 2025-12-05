@@ -154,9 +154,64 @@ const ViewStuds = ({ onLogout, onPageChange }) => {
     const [isLoading, setIsLoading] = useState(true); 
     const [error, setError] = useState(null);
     const [attendanceData, setAttendanceData] = useState({}); 
+    const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+    // NEW STATE for Search Functionality
+    const [searchTerm, setSearchTerm] = useState(''); 
 
     const PROFESSOR_UID = 'MOCK_PROF_ID_123'; 
     const CURRENT_SECTION_FILTER = '3D'; 
+
+    // --- FUNCTIONAL EXPORT: CSV (Opens in Excel) ---
+    const exportToExcel = () => {
+        setIsExportMenuOpen(false); // Close dropdown
+        
+        if (students.length === 0) {
+             alert("No student records to export.");
+             return;
+        }
+
+        // Headers matching the Student Information table
+        const headers = ["Student ID", "Student Name", "Type of Student", "Course", "Section & Year", "Cellphone #", "Email", "Home Address"];
+
+        // Map student data to rows
+        const rows = students.map(s => [
+            s.id, s.name, s.type, s.course, s.section, s.cell, s.email, s.address
+        ]);
+
+        // Combine headers and rows, ensuring proper CSV formatting
+        const allData = [headers, ...rows];
+        const csvContent = allData.map(e => e.join(",")).join("\n");
+
+        // Create a Blob and trigger download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "Student_List.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } else {
+            alert("Your browser does not support automatic CSV download.");
+        }
+    };
+
+    // --- FUNCTIONAL EXPORT: PDF (Native Print Dialog) ---
+    const exportToPDF = () => {
+        // Hiding the export menu before printing
+        setIsExportMenuOpen(false);
+        
+        if (students.length === 0) {
+             alert("No student records to print/save as PDF.");
+             return;
+        }
+
+        // The @media print query in the style block handles hiding UI elements
+        window.print();
+    };
+
 
     // --- FETCH DATA ---
     const fetchStudents = async () => {
@@ -203,6 +258,9 @@ const ViewStuds = ({ onLogout, onPageChange }) => {
     const handleViewChange = (e) => {
         const selected = e.target.value;
         setViewOption(selected);
+        // Close export menu and clear search term when view changes
+        setIsExportMenuOpen(false);
+        setSearchTerm(''); 
 
         const gradeViews = ['Midterm', 'Finals', 'Assignment', 'Quizzes', 'Activities'];
 
@@ -240,6 +298,24 @@ const ViewStuds = ({ onLogout, onPageChange }) => {
         alert(`Edit feature for ${studentName} coming soon!`);
     };
 
+    // --- NEW: Filtered Student List Logic ---
+    const filteredStudents = students.filter(student => {
+        // Only apply filter if in 'Student Information' view
+        if (viewOption !== 'Student Information') return true; 
+
+        if (searchTerm === '') return true;
+
+        const lowerCaseSearch = searchTerm.toLowerCase();
+        
+        // Check student properties for a match against name, ID, course, or section
+        return (
+            student.name.toLowerCase().includes(lowerCaseSearch) ||
+            student.id.toLowerCase().includes(lowerCaseSearch) ||
+            student.course.toLowerCase().includes(lowerCaseSearch) ||
+            student.section.toLowerCase().includes(lowerCaseSearch)
+        );
+    });
+
     // --- RENDER HELPERS ---
     const renderTable = () => {
         if (isLoading) return <div className="vs-status-message">Loading student data...</div>;
@@ -258,6 +334,11 @@ const ViewStuds = ({ onLogout, onPageChange }) => {
         if (viewOption === 'Student Information') {
             if (students.length === 0) return <div className="vs-status-message">No students found for this section. Click "Add Student" to begin.</div>;
             
+            // Display message if no students match the search term
+            if (searchTerm !== '' && filteredStudents.length === 0) {
+                 return <div className="vs-status-message">No students match your search for "{searchTerm}".</div>;
+            }
+            
             return (
                 <table className="vs-table">
                     <thead>
@@ -274,7 +355,7 @@ const ViewStuds = ({ onLogout, onPageChange }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {students.map((student) => (
+                        {filteredStudents.map((student) => (
                             <tr key={student.id} className={student.isNew ? "vs-row-animate-new" : ""}>
                                 <td className="vs-id-text">{student.id}</td>
                                 <td style={{fontWeight: '600'}}>{student.name}</td>
@@ -296,9 +377,10 @@ const ViewStuds = ({ onLogout, onPageChange }) => {
             );
         } else if (viewOption === 'Attendance') {
              if (students.length === 0) return <div className="vs-status-message">No students found for attendance tracking.</div>;
-            
+             
              return (
-                <table className="vs-table">
+                 <table className="vs-table">
+                     {/* NOTE: Attendance view currently uses the full students list, as search is expected to be cleared/ignored here */}
                     <thead>
                         <tr>
                             <th className="fixed-col">Student ID</th>
@@ -328,8 +410,8 @@ const ViewStuds = ({ onLogout, onPageChange }) => {
                             );
                         })}
                     </tbody>
-                </table>
-            );
+                 </table>
+             );
         }
         return <div style={{padding: '2rem', textAlign: 'center'}}>Feature coming soon for {viewOption}</div>;
     };
@@ -344,7 +426,14 @@ const ViewStuds = ({ onLogout, onPageChange }) => {
                 <header className="vs-header">
                     <div className="vs-search-container">
                         <SearchIcon className="vs-search-icon" />
-                        <input type="text" placeholder="Search students" className="vs-search-input" />
+                        {/* UPDATED: Search Input functionality */}
+                        <input 
+                            type="text" 
+                            placeholder="Search students" 
+                            className="vs-search-input"
+                            value={searchTerm} // Controlled component
+                            onChange={(e) => setSearchTerm(e.target.value)} // Update state on change
+                        />
                     </div>
                     
                     {viewOption === 'Attendance' && (
@@ -360,30 +449,7 @@ const ViewStuds = ({ onLogout, onPageChange }) => {
                     </div>
                 </header>
 
-                {/* Filter Bar */}
-                <div className="vs-floating-filter-bar">
-                    <div className="vs-filter-group">
-                        <label>Institute</label>
-                        <div className="vs-select-wrapper">
-                            <select defaultValue="College of Engineering"><option>College of Engineering</option></select>
-                            <ChevronDown className="vs-select-arrow" size={16} />
-                        </div>
-                    </div>
-                    <div className="vs-filter-group">
-                        <label>Year Level</label>
-                        <div className="vs-select-wrapper">
-                            <select defaultValue="1st Year"><option>1st Year</option></select>
-                            <ChevronDown className="vs-select-arrow" size={16} />
-                        </div>
-                    </div>
-                    <div className="vs-filter-group">
-                        <label>Section</label>
-                        <div className="vs-select-wrapper">
-                            <select defaultValue="All Sections"><option>All Sections</option></select>
-                            <ChevronDown className="vs-select-arrow" size={16} />
-                        </div>
-                    </div>
-                </div>
+                
 
                 {/* Main Content */}
                 <div className="vs-content-card">
@@ -394,39 +460,20 @@ const ViewStuds = ({ onLogout, onPageChange }) => {
                         </div>
                     )}
 
-                    {viewOption === 'Student Information' && (
-                        <div className="vs-share-banner">
-                            <div className="vs-share-content">
-                                <div className="vs-share-header">
-                                    <LinkIcon size={20} />
-                                    <span>Shareable Form Link</span>
-                                </div>
-                                <p>Share this link with students so they can submit their own information</p>
-                                <div className="vs-link-row">
-                                    <input type="text" readOnly value="https://student.progress.tracker.site/?form=student-info..." />
-                                    <button className="vs-copy-btn" onClick={copyToClipboard}><CopyIcon size={14} /> Copy Link</button>
-                                </div>
-                                <p className="vs-link-note">Students who use this link will be automatically assigned to Computing Science Institute - selected 3D section</p>
-                            </div>
-                        </div>
-                    )}
 
                     <div className="vs-controls-row">
                         <div className="vs-dropdown-wrapper">
                              <select 
-                                className="vs-section-dropdown"
-                                value={viewOption}
-                                onChange={handleViewChange} 
-                            >
-                                <option>Student Information</option>
-                                <option>Attendance</option>
-                                <option>Assignment</option>
-                                <option>Quizzes</option>
-                                <option>Activities</option>
-                                <option>Midterm</option>
-                                <option>Finals</option>
-                            </select>
-                            <ChevronDown className="vs-dropdown-arrow" size={18} />
+                                 className="vs-section-dropdown"
+                                 value={viewOption}
+                                 onChange={handleViewChange} 
+                             >
+                                 <option>Student Information</option>
+                                 <option>Attendance</option>
+                                 <option>Midterm</option>
+                                 <option>Finals</option>
+                             </select>
+                             <ChevronDown className="vs-dropdown-arrow" size={18} />
                         </div>
 
                         {viewOption === 'Attendance' && (
@@ -437,14 +484,33 @@ const ViewStuds = ({ onLogout, onPageChange }) => {
                     </div>
 
                     {viewOption === 'Student Information' && (
-                         <div className="vs-buttons-row">
-                             <button className="vs-btn vs-btn-add" onClick={() => setIsAddModalOpen(true)}>
-                                <PlusIcon size={16} /> Add Student
-                            </button>
-                             <button className="vs-btn vs-btn-export">
-                                <DownloadIcon size={16} /> Export Full List
-                            </button>
-                         </div>
+                             <div className="vs-buttons-row">
+                                 <button className="vs-btn vs-btn-add" onClick={() => setIsAddModalOpen(true)}>
+                                     <PlusIcon size={16} /> Add Student
+                                 </button>
+                                 
+                                 {/* EXPORT DROPDOWN IMPLEMENTATION */}
+                                 <div className="vs-export-dropdown-wrapper">
+                                     <button 
+                                         className="vs-btn vs-btn-export" 
+                                         onClick={() => setIsExportMenuOpen(prev => !prev)}
+                                     >
+                                         <DownloadIcon size={16} /> Export Full List <ChevronDown size={16} style={{marginLeft: '4px'}} />
+                                     </button>
+                                     
+                                     {isExportMenuOpen && (
+                                         <div className="vs-export-menu">
+                                             <button onClick={exportToExcel} className="vs-export-menu-item">
+                                                 Export as Excel (.csv)
+                                             </button>
+                                             <button onClick={exportToPDF} className="vs-export-menu-item">
+                                                 Print/Export as PDF
+                                             </button>
+                                         </div>
+                                     )}
+                                 </div>
+                                 {/* END EXPORT DROPDOWN */}
+                             </div>
                     )}
 
                     <div className="vs-table-container">
@@ -466,6 +532,68 @@ const ViewStuds = ({ onLogout, onPageChange }) => {
                 onClose={() => setIsAddModalOpen(false)} 
                 onStudentAdded={handleStudentAdded} 
             />
+            
+            {/* STYLES FOR EXPORT DROPDOWN AND PRINT CLEANUP */}
+            <style>{`
+                .vs-export-dropdown-wrapper {
+                    position: relative;
+                    display: inline-block;
+                }
+                .vs-export-menu {
+                    position: absolute;
+                    top: 100%; /* Position below the button */
+                    right: 0;
+                    z-index: 10;
+                    background: white;
+                    border: 1px solid #E5E7EB;
+                    border-radius: 6px;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+                    min-width: 180px;
+                    margin-top: 5px;
+                    overflow: hidden;
+                    display: flex;
+                    flex-direction: column;
+                }
+                .vs-export-menu-item {
+                    display: block;
+                    width: 100%;
+                    padding: 10px 15px;
+                    text-align: left;
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    font-size: 0.9rem;
+                    color: #4B5563;
+                }
+                .vs-export-menu-item:hover {
+                    background-color: #F3F4F6;
+                    color: #1F2937;
+                }
+                
+                /* PRINT STYLES */
+                @media print {
+                    /* Hide non-essential UI elements for a clean PDF output */
+                    .vs-header,
+                    .vs-floating-filter-bar,
+                    .vs-controls-row,
+                    .vs-share-banner,
+                    .vs-buttons-row,
+                    .view-studs-layout > .sidebar,
+                    .vs-legend,
+                    .vs-edit-btn {
+                        display: none !important;
+                    }
+                    /* Ensure main content takes full width */
+                    .view-studs-main {
+                        margin-left: 0 !important; 
+                        width: 100%;
+                    }
+                    .vs-content-card {
+                        box-shadow: none !important;
+                        border: none !important;
+                    }
+                }
+            `}</style>
         </div>
     );
 };

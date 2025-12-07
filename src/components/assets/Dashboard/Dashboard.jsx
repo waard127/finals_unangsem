@@ -19,7 +19,8 @@ const BookOpen = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" 
 const ArrowRight = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>);
 const Menu = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>);
 
-const GreetingSection = ({ profileData }) => {
+// --- UPDATED GREETING SECTION WITH STATUS INDICATOR ---
+const GreetingSection = ({ profileData, isOnline }) => {
     const [text, setText] = useState('');
     const userName = profileData?.displayName || profileData?.fullName || 'Professor';
     
@@ -61,6 +62,22 @@ const GreetingSection = ({ profileData }) => {
         <div style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem', animation: 'fadeIn 0.5s ease-in-out' }}>
             <div style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '50%', border: '3px solid #38761d', padding: '3px', backgroundColor: 'white', boxShadow: '0 4px 12px rgba(56, 118, 29, 0.2)' }}>
                 <img src={avatarSrc} alt="Profile" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} onError={(e) => { e.target.onerror = null; e.target.src = fallbackAvatar; }} />
+                
+                {/* --- ONLINE/OFFLINE INDICATOR --- */}
+                <div 
+                    title={isOnline ? "Online" : "Offline"}
+                    style={{
+                        position: 'absolute',
+                        bottom: '0',
+                        right: '0',
+                        width: '22px',
+                        height: '22px',
+                        borderRadius: '50%',
+                        backgroundColor: isOnline ? '#4ade80' : '#9ca3af', // Green if Online, Gray if Offline
+                        border: '3px solid white',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}
+                />
             </div>
             <h1 style={{ fontSize: '2.25rem', fontWeight: '800', color: '#1F2937', margin: 0, minHeight: '3rem', display: 'flex', alignItems: 'center' }}>
                 {text}
@@ -109,7 +126,8 @@ const MetricCard = ({ data }) => (
     </div>
 );
 
-const Dashboard = ({ onLogout, onPageChange, profileData, isVoiceActive, onToggleVoice, sections = [], students = [] }) => {
+// --- UPDATED DASHBOARD COMPONENT ---
+const Dashboard = ({ onLogout, onPageChange, profileData, isVoiceActive, onToggleVoice, sections = [], students = [], isOnline }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isDesktopMode, setIsDesktopMode] = useState(window.innerWidth >= 1024);
     const [sidebarWidth, setSidebarWidth] = useState(isDesktopMode ? SIDEBAR_DEFAULT_WIDTH : 0);
@@ -140,7 +158,6 @@ const Dashboard = ({ onLogout, onPageChange, profileData, isVoiceActive, onToggl
         });
     }, [sections, students]);
 
-    // Filtering Logic
     const filteredSections = useMemo(() => {
         if (!sectionsWithStudentCount || sectionsWithStudentCount.length === 0) return [];
         
@@ -157,19 +174,10 @@ const Dashboard = ({ onLogout, onPageChange, profileData, isVoiceActive, onToggl
         });
     }, [sectionsWithStudentCount, filterInstitute, filterYear, filterCourse, searchTerm]);
 
-    const handleInstituteChange = (e) => {
-        setFilterInstitute(e.target.value === 'Select Institute' ? '' : e.target.value);
-    };
+    const handleInstituteChange = (e) => setFilterInstitute(e.target.value === 'Select Institute' ? '' : e.target.value);
+    const handleYearChange = (e) => setFilterYear(e.target.value === 'Select Year' ? '' : e.target.value);
+    const handleCourseChange = (e) => setFilterCourse(e.target.value === 'Select Course' ? '' : e.target.value);
 
-    const handleYearChange = (e) => {
-        setFilterYear(e.target.value === 'Select Year' ? '' : e.target.value);
-    };
-
-    const handleCourseChange = (e) => {
-        setFilterCourse(e.target.value === 'Select Course' ? '' : e.target.value);
-    };
-
-    // Calculate total students across all sections
     const totalStudents = students.length;
 
     const METRICS_DATA = [
@@ -196,7 +204,8 @@ const Dashboard = ({ onLogout, onPageChange, profileData, isVoiceActive, onToggl
                     </div>
                 </header>
 
-                <GreetingSection profileData={profileData} />
+                {/* --- PASSING isOnline TO GREETING SECTION --- */}
+                <GreetingSection profileData={profileData} isOnline={isOnline} />
 
                 <div className="section-container">
                     <div className="filters-bar">

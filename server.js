@@ -2,7 +2,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config(); 
+require('dotenv').config(); // Load environment variables
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -10,13 +10,6 @@ const PORT = process.env.PORT || 5000;
 // --- MIDDLEWARE ---
 app.use(cors());
 app.use(express.json());
-
-// --- MONGODB CONNECTION ---
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/student_tracker_db";
-
-mongoose.connect(MONGO_URI)
-    .then(() => console.log("✅ MongoDB Connected Successfully"))
-    .catch(err => console.error("❌ MongoDB Connection Error:", err));
 
 // ==========================================
 // 1. SCHEMAS & MODELS
@@ -55,10 +48,76 @@ const studentSchema = new mongoose.Schema({
 
 const Student = mongoose.model('Student', studentSchema);
 
+// --- SMART DATABASE CONNECTION ---
+// Tries Online first. Falls back to Local.
+const connectDB = async () => {
+    try {
+        console.log("☁️  Attempting to connect to MongoDB Atlas (Online)...");
+        // Try Online Connection with a 5-second timeout
+        await mongoose.connect(process.env.MONGO_URI_CLOUD, {
+            serverSelectionTimeoutMS: 5000 
+        });
+        console.log("✅ CONNECTED TO: MongoDB Atlas (Online Mode)");
+    } catch (err) {
+        console.warn("⚠️  Internet connection failed or Atlas is unreachable.");
+        console.warn("🔄 Switching to Local Database...");
+        try {
+            // Fallback to Local Connection
+            await mongoose.connect(process.env.MONGO_URI_LOCAL);
+            console.log("✅ CONNECTED TO: Localhost (Offline Mode)");
+        } catch (localErr) {
+            console.error("❌ CRITICAL ERROR: Could not connect to ANY database (Online or Local).");
+            console.error(localErr);
+        }
+    }
+};
+
+// Initialize DB Connection
+connectDB();
+
 
 // ==========================================
 // 2. API ROUTES
 // ==========================================
+
+// --- AUTO-SYNC ENDPOINT (NEW) ---
+app.post('/api/sync-now', async (req, res) => {
+    console.log("🔄 Auto-Sync Triggered by Frontend...");
+    
+    // Create temporary independent connections to move data
+    const localConn = mongoose.createConnection(process.env.MONGO_URI_LOCAL);
+    const cloudConn = mongoose.createConnection(process.env.MONGO_URI_CLOUD);
+
+    const LocalModel = localConn.model('Student', studentSchema);
+    const CloudModel = cloudConn.model('Student', studentSchema);
+
+    try {
+        const localData = await LocalModel.find({});
+        let count = 0;
+
+        // Push Local -> Cloud
+        for (const doc of localData) {
+            await CloudModel.findOneAndUpdate(
+                { id: doc.id, professorUid: doc.professorUid },
+                doc.toObject(),
+                { upsert: true, new: true }
+            );
+            count++;
+        }
+
+        console.log(`✅ Auto-Sync Finished: ${count} records synced to Cloud.`);
+        res.json({ success: true, count, message: "Sync Complete" });
+
+    } catch (error) {
+        console.error("❌ Sync Failed:", error);
+        res.status(500).json({ error: "Sync failed" });
+    } finally {
+        // Clean up connections
+        await localConn.close();
+        await cloudConn.close();
+    }
+});
+
 
 // --- A. USER ROUTES ---
 
@@ -77,7 +136,7 @@ app.post('/api/user-sync', async (req, res) => {
         );
         res.json(user);
     } catch (error) {
-        console.error("❌ Sync Error:", error);
+        console.error("❌ User Sync Error:", error);
         res.status(500).json({ message: "Server Error syncing user" });
     }
 });

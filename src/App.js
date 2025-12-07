@@ -19,7 +19,6 @@ import { auth } from './apiService';
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth'; 
 import CdmChatbot from './Apps.jsx'; 
 
-// --- UPDATED IMPORT LOGIC ---
 import meta from './meta.json'; 
 const { APP_VERSION, BUILD_HASH, BUILD_DATE } = meta; 
 
@@ -32,6 +31,10 @@ function App() {
     const [profileData, setProfileData] = useState(null); 
     const [isDataReady, setIsDataReady] = useState(false); 
     const [isVoiceActive, setIsVoiceActive] = useState(false);
+
+    // --- NEW: OFFLINE/SYNC STATUS ---
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
+    const [isSyncing, setIsSyncing] = useState(false);
 
     // --- LOAD FROM LOCALSTORAGE ON MOUNT ---
     const loadFromStorage = (key, defaultValue) => {
@@ -50,6 +53,38 @@ function App() {
     // --- SHARED STUDENTS STATE (LOAD FROM DATABASE) ---
     const [students, setStudents] = useState([]);
 
+    // --- NEW: AUTO-SYNC LISTENER ---
+    useEffect(() => {
+        const handleOnline = () => {
+            setIsOnline(true);
+            triggerAutoSync(); // Call sync when internet returns
+        };
+        const handleOffline = () => setIsOnline(false);
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
+
+    const triggerAutoSync = async () => {
+        setIsSyncing(true);
+        try {
+            console.log("⚡ Internet Restored! Syncing to Cloud...");
+            const res = await fetch('http://localhost:5000/api/sync-now', { method: 'POST' });
+            const data = await res.json();
+            console.log("✅ Sync Result:", data);
+        } catch (e) {
+            console.error("Sync Failed:", e);
+        } finally {
+            // Keep the blue badge for 2 seconds so the user sees it
+            setTimeout(() => setIsSyncing(false), 2000);
+        }
+    };
+
     // --- FETCH STUDENTS FROM DATABASE ---
     const fetchStudentsFromDB = async (professorUid) => {
         try {
@@ -60,7 +95,8 @@ function App() {
             console.log('✅ Students loaded from database:', data.length);
         } catch (error) {
             console.error('Error fetching students:', error);
-            setStudents([]);
+            // Don't clear students on error if we are offline, keep current state if possible
+            if (isOnline) setStudents([]); 
         }
     };
 
@@ -98,7 +134,14 @@ function App() {
                     
                     setIsDataReady(true);
                 } catch (error) {
-                    setProfileData({ displayName: firebaseUser.displayName || 'Professor', email: firebaseUser.email, id: firebaseUser.uid, role: 'Offline Mode', photoURL: firebaseUser.photoURL });
+                    console.warn("⚠️  Offline Mode Detected during login.");
+                    setProfileData({ 
+                        displayName: firebaseUser.displayName || 'Professor', 
+                        email: firebaseUser.email, 
+                        id: firebaseUser.uid, 
+                        role: 'Offline Mode', 
+                        photoURL: firebaseUser.photoURL 
+                    });
                     setIsDataReady(true);
                 }
             } else {
@@ -132,14 +175,15 @@ function App() {
 
     // --- REFRESH STUDENTS FUNCTION (for ViewStuds to call after adding) ---
     const refreshStudents = () => {
-        if (profileData?.uid) {
-            fetchStudentsFromDB(profileData.uid);
+        if (profileData?.id || profileData?.uid) {
+            fetchStudentsFromDB(profileData.id || profileData.uid);
         }
     };
 
     const renderMainContent = () => {
         if (isLoadingAuth || !profileData || !isDataReady) return <LoadingAnimation isDataReady={isDataReady} />;
 
+        // --- UPDATED: Passing isOnline to Dashboard ---
         const dashboardProps = {
             onLogout: handleLogout,
             onPageChange: handlePageChange,
@@ -147,7 +191,8 @@ function App() {
             isVoiceActive: isVoiceActive,
             onToggleVoice: () => toggleVoice(!isVoiceActive),
             sections: sections,
-            students: students
+            students: students,
+            isOnline: isOnline // <--- PASSED HERE
         };
 
         const profileProps = {
@@ -172,7 +217,7 @@ function App() {
                     sectionData={pageParams.sectionData} 
                     students={students} 
                     onRefreshStudents={refreshStudents}
-                    professorUid={profileData.uid}
+                    professorUid={profileData.id || profileData.uid}
                 />;
             
             case 'reports': 
@@ -199,9 +244,19 @@ function App() {
     if (isLoggedIn) {
         return (
              <div className="dashboard-container">
+                 <div className={`status-bar ${!isOnline ? 'offline' : ''} ${isSyncing ? 'syncing' : ''}`}>
+                    {!isOnline && "📡 Offline Mode - Saving Locally"}
+                    {isSyncing && "☁️ Internet Restored - Syncing to Cloud..."}
+                 </div>
+
                  <VoiceControl isVoiceActive={isVoiceActive} onToggle={toggleVoice} onPageChange={handlePageChange} />
                  {renderMainContent()}
-                 <CdmChatbot onPageChange={handlePageChange} /> 
+                 
+                 {/* --- FIXED: PASSING REAL PROFESSOR UID TO CHATBOT --- */}
+                 <CdmChatbot 
+                    onPageChange={handlePageChange} 
+                    professorUid={profileData?.id || profileData?.uid} 
+                 /> 
              </div>
         );
     } else {

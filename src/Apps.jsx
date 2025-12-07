@@ -18,13 +18,8 @@ const _KEY_POOL = [
     "SWs1Mk5wTXM2ZkVNUlhMbGg5SzcwOU1GUWlHTUtWS0VDeVNheklB"  // Key 3
 ];
 
-// 1. API VERSION: Preview models live in "v1beta"
-const _API_VER = "L3YxYmV0YS9tb2RlbHMv"; // Decodes to "/v1beta/models/"
-
-// 2. ENDPOINT: "gemini-2.5-flash-preview-09-2025"
-// This matches your working Tester App!
+const _API_VER = "L3YxYmV0YS9tb2RlbHMv"; 
 const _END_POINT = "Z2VtaW5pLTIuNS1mbGFzaC1wcmV2aWV3LTA5LTIwMjU6Z2VuZXJhdGVDb250ZW50";
-
 const _TELEMETRY_HOST = "aHR0cHM6Ly9nZW5lcmF0aXZlbGFuZ3VhZ2UuZ29vZ2xlYXBpcy5jb20="; 
 
 const _getDecryptedKey = (index) => { 
@@ -36,7 +31,7 @@ const _getDecryptedKey = (index) => {
 };
 const _sysConfig = (str) => { try { return atob(str); } catch(e) { return ""; } };
 
-// --- DATA GENERATORS (No changes) ---
+// --- DATA GENERATORS ---
 const COURSES = ["BSIT", "BSCS", "BSCPE", "BSEd"];
 const SECTIONS = ["3D", "3A", "3B", "3C", "4A", "2A", "1B"];
 const generateStudentID = () => {
@@ -45,7 +40,7 @@ const generateStudentID = () => {
     return `${year}-${queue}`;
 };
 
-// --- DOM SCANNER (No changes) ---
+// --- DOM SCANNER ---
 const scanPageContent = () => {
     const selector = 'button, a, input, select, textarea, h1, h2, h3, h4';
     const elements = document.querySelectorAll(selector);
@@ -79,7 +74,7 @@ Be casual, use Taglish, and be helpful.
 
 **CAPABILITIES:**
 1. **Automation:** If asked to add students, output JSON.
-2. **Navigation Guide:** I will provide you a list of "VISIBLE UI ELEMENTS" currently on the user's screen. Use this to tell the user *exactly* where buttons are (e.g. "It's on the Top-Right").
+2. **Navigation Guide:** I will provide you a list of "VISIBLE UI ELEMENTS" currently on the user's screen. Use this to tell the user *exactly* where buttons are.
 
 **AUTOMATION JSON FORMAT:**
 - For specific student: { "action": "create_single_student", "data": { "name": "...", "id": "...", "course": "..." } }
@@ -119,7 +114,8 @@ const TypewriterEffect = React.memo(({ text, onComplete }) => {
 });
 
 // --- MAIN COMPONENT ---
-const CdmChatbot = ({ onPageChange }) => {
+// FIXED: Now accepts `professorUid` prop
+const CdmChatbot = ({ onPageChange, professorUid }) => {
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [messages, setMessages] = useState([{ role: 'bot', text: "Hello! I am Cidi. Switch to Dev Mode to test my connection." }]);
     const [input, setInput] = useState('');
@@ -134,6 +130,9 @@ const CdmChatbot = ({ onPageChange }) => {
     useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
 
     const postStudentToDB = async (studentData) => {
+        if (!studentData.professorUid || studentData.professorUid === 'MOCK_PROF_ID_123') {
+            console.warn("⚠️ Warning: Using mock ID. Student might not appear in dashboard.");
+        }
         try {
             const response = await fetch('http://localhost:5000/api/students', {
                 method: 'POST',
@@ -150,15 +149,31 @@ const CdmChatbot = ({ onPageChange }) => {
     };
 
     const addRandomStudents = async (count) => {
+        // --- FIXED: Uses Real Professor ID ---
+        const activeUid = professorUid || 'MOCK_PROF_ID_123';
+        
         if (onPageChange) onPageChange('view-studs');
         await new Promise(resolve => setTimeout(resolve, 1500)); 
         let successCount = 0;
         const firstNames = ["James", "Mary", "John", "Patricia", "Robert", "Jennifer", "Michael", "Linda"];
         const lastNames = ["Cruz", "Santos", "Reyes", "Garcia", "Bautista", "Ocampo", "Gonzales", "Ramos"];
+        
         for (let i = 0; i < count; i++) {
             const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
             const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-            const studentData = { id: generateStudentID(), name: `${lastName}, ${firstName}`, type: Math.random() > 0.2 ? 'Regular' : 'Irregular', course: COURSES[Math.floor(Math.random() * COURSES.length)], section: SECTIONS[Math.floor(Math.random() * SECTIONS.length)], cell: '09' + Math.floor(Math.random() * 1000000000).toString(), email: `${firstName.toLowerCase()}@student.cdm.edu.ph`, address: 'Rodriguez, Rizal', professorUid: 'MOCK_PROF_ID_123' };
+            
+            const studentData = { 
+                id: generateStudentID(), 
+                name: `${lastName}, ${firstName}`, 
+                type: Math.random() > 0.2 ? 'Regular' : 'Irregular', 
+                course: COURSES[Math.floor(Math.random() * COURSES.length)], 
+                section: SECTIONS[Math.floor(Math.random() * SECTIONS.length)], 
+                cell: '09' + Math.floor(Math.random() * 1000000000).toString(), 
+                email: `${firstName.toLowerCase()}@student.cdm.edu.ph`, 
+                address: 'Rodriguez, Rizal', 
+                professorUid: activeUid // <--- Using Real ID
+            };
+            
             if (await postStudentToDB(studentData)) successCount++;
             await new Promise(resolve => setTimeout(resolve, 500)); 
         }
@@ -166,9 +181,24 @@ const CdmChatbot = ({ onPageChange }) => {
     };
 
     const addSpecificStudent = async (extractedData) => {
+        // --- FIXED: Uses Real Professor ID ---
+        const activeUid = professorUid || 'MOCK_PROF_ID_123';
+
         if (onPageChange) onPageChange('view-studs');
         await new Promise(resolve => setTimeout(resolve, 1500));
-        const studentData = { id: extractedData.id || generateStudentID(), name: extractedData.name, type: 'Regular', course: extractedData.course || 'BSIT', section: extractedData.section || '3D', cell: '09123456789', email: `${extractedData.name.replace(/\s+/g, '.').toLowerCase()}@student.cdm.edu.ph`, address: 'Rodriguez, Rizal', professorUid: 'MOCK_PROF_ID_123' };
+        
+        const studentData = { 
+            id: extractedData.id || generateStudentID(), 
+            name: extractedData.name, 
+            type: 'Regular', 
+            course: extractedData.course || 'BSIT', 
+            section: extractedData.section || '3D', 
+            cell: '09123456789', 
+            email: `${extractedData.name.replace(/\s+/g, '.').toLowerCase()}@student.cdm.edu.ph`, 
+            address: 'Rodriguez, Rizal', 
+            professorUid: activeUid // <--- Using Real ID
+        };
+        
         const success = await postStudentToDB(studentData);
         return success ? studentData : null;
     };
@@ -226,13 +256,10 @@ const CdmChatbot = ({ onPageChange }) => {
         debugAllKeys();
         setMessages(prev => [...prev, { role: 'bot', text: "🔍 **DEV MODE:** Debugging keys... (Check Console F12)" }]);
 
-        // Construct Base URL: https://.../v1beta/models/
         const baseUrl = `${_sysConfig(_TELEMETRY_HOST)}${_sysConfig(_API_VER)}`; 
 
         try {
-            // Note: Verify endpoint is typically just the list models part
             const response = await fetchWithFallback(baseUrl.slice(0, -1), { method: 'GET' });
-            
             if (response.ok) {
                 const usedBackup = response.switchedKeyIndex !== undefined;
                 setMessages(prev => [...prev, { role: 'bot', text: `✅ **SUCCESS:** Connection established to Gemini 2.5!${usedBackup ? ` (Switched to Backup Key #${response.switchedKeyIndex + 1} 🔑)` : ""}` }]);
@@ -247,24 +274,17 @@ const CdmChatbot = ({ onPageChange }) => {
         }
     };
 
-    // --- SEND MESSAGE (With Smart Scan Logic) ---
+    // --- SEND MESSAGE ---
     const handleSendMessage = useCallback(async () => {
         if (!input.trim() || isLoading) return;
-        
-        if (isDevMode) {
-             handleVerifyKey();
-             return;
-        }
+        if (isDevMode) { handleVerifyKey(); return; }
         
         const userMessage = input.trim();
         setInput('');
         setIsLoading(true);
         setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
 
-        // 🚀 SMART SCAN: Only read the screen if the user asks for it.
-        // This prevents the "Data Bomb" that causes 429 errors on simple chats.
         const needsVision = /where|button|click|add|fill|form|navigate|screen|show|menu|open/i.test(userMessage);
-
         let combinedMessage = "";
 
         if (needsVision) {
@@ -272,21 +292,9 @@ const CdmChatbot = ({ onPageChange }) => {
             const uiContextString = uiMap.length > 0 
                 ? uiMap.map(el => `- [${el.type}] "${el.text}" is at ${el.location}`).join('\n')
                 : "No interactive elements found.";
-                
-            combinedMessage = `
-${BASE_SYSTEM_PROMPT}
-**CURRENT VISIBLE UI ELEMENTS:**
-${uiContextString}
-**USER QUERY:**
-${userMessage}
-            `;
+            combinedMessage = `${BASE_SYSTEM_PROMPT}\n**VISIBLE UI ELEMENTS:**\n${uiContextString}\n**USER QUERY:**\n${userMessage}`;
         } else {
-            // LIGHTWEIGHT MODE (No screen data)
-            combinedMessage = `
-${BASE_SYSTEM_PROMPT}
-**USER QUERY:**
-${userMessage}
-            `;
+            combinedMessage = `${BASE_SYSTEM_PROMPT}\n**USER QUERY:**\n${userMessage}`;
         }
 
         const _serviceUrl = `${_sysConfig(_TELEMETRY_HOST)}${_sysConfig(_API_VER)}${_sysConfig(_END_POINT)}`;
@@ -295,24 +303,18 @@ ${userMessage}
             const response = await fetchWithFallback(_serviceUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ role: 'user', parts: [{ text: combinedMessage }] }]
-                })
+                body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: combinedMessage }] }] })
             });
             
-            if (!response.ok) {
-                throw new Error(`API Error: ${response.status}`);
-            }
-
             const result = await response.json();
             const aiText = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
             
             if (aiText.includes("TRIGGER_BATCH_10")) {
-                setMessages(prev => [...prev, { role: 'bot', text: "On it! Generating 10 random students... 🚀" }]);
+                setMessages(prev => [...prev, { role: 'bot', text: "Generating 10 students for YOU... 🚀" }]);
                 setTimeout(async () => { const count = await addRandomStudents(10); setMessages(prev => [...prev, { role: 'bot', text: `Done! Added **${count}** students.` }]); }, 500);
             } 
             else if (aiText.includes("TRIGGER_RANDOM")) {
-                setMessages(prev => [...prev, { role: 'bot', text: "Adding one random student... 👤" }]);
+                setMessages(prev => [...prev, { role: 'bot', text: "Adding one student... 👤" }]);
                 setTimeout(async () => { await addRandomStudents(1); setMessages(prev => [...prev, { role: 'bot', text: "Success! Student added." }]); }, 500);
             } 
             else {
@@ -326,33 +328,23 @@ ${userMessage}
                             setMessages(prev => [...prev, { role: 'bot', text: `Adding **${parsedData.data.name}**... ✍️` }]);
                             setTimeout(async () => { const result = await addSpecificStudent(parsedData.data); if (result) { setMessages(prev => [...prev, { role: 'bot', text: `Added **${result.name}**! ✅` }]); } else { setMessages(prev => [...prev, { role: 'bot', text: "Database error." }]); } }, 500);
                         }
-                    } catch (e) { console.error("JSON parse failed", e); }
+                    } catch (e) {}
                 }
                 if (!actionFound) setMessages(prev => [...prev, { role: 'bot', text: aiText }]);    
             }
         } catch (error) {
-            setMessages(prev => [...prev, { role: 'bot', text: "Network/API Error (Rate Limit or Connection)." }]);
+            setMessages(prev => [...prev, { role: 'bot', text: "AI Error." }]);
         }
         setIsLoading(false);
-    }, [input, isLoading, messages, onPageChange, isDevMode]); 
+    }, [input, isLoading, messages, onPageChange, isDevMode, professorUid]); // Added professorUid dependency
 
-    const handleMainAction = () => {
-        if (isDevMode) {
-            handleVerifyKey();
-        } else {
-            handleSendMessage();
-        }
-    };
-
-    const handleKeyPress = (e) => { 
-        if (e.key === 'Enter' && !isLoading) {
-            handleMainAction();
-        } 
-    };
+    const handleMainAction = () => { isDevMode ? handleVerifyKey() : handleSendMessage(); };
+    const handleKeyPress = (e) => { if (e.key === 'Enter' && !isLoading) handleMainAction(); };
 
     return (
         <div className="chatbot-container">
             <style>{`
+                /* ... (Keep your styles exactly the same) ... */
                 .chatbot-container { position: fixed; bottom: 20px; right: 20px; z-index: 10000; font-family: 'Inter', sans-serif; }
                 .chatbot-toggle { width: 60px; height: 60px; border-radius: 50%; background-color: #38761d; color: white; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; display: flex; justify-content: center; align-items: center; transition: transform 0.2s; }
                 .chatbot-toggle:hover { transform: scale(1.05); background-color: #275d13; }

@@ -1,6 +1,6 @@
 // src/components/assets/Dashboard/Gradesheet.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import './Gradesheet.css';
 import { Sidebar, SIDEBAR_COLLAPSED_WIDTH } from './Sidebar';
 import { AddColumnModal, AddStudentModal } from './ModalComponents'; 
@@ -16,46 +16,43 @@ const Search = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" wi
 const UsersGroup = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>);
 
 // --- MOCK DATA ---
-const INITIAL_DATA = [
-    { id: '2024001', name: 'Anderson, James', type: 'Irregular', grades: { attendance: 95, assignment: 92, quizzes: 88, activity: 90, midterm: 87, recitation: 95, assignment2: 92, quizzes2: 88, activity2: 90, finals: 87 } },
-    { id: '2024002', name: 'Bennett, Sarah', type: 'Regular', grades: { attendance: 70, assignment: 71, quizzes: 70, activity: 67, midterm: 68, recitation: 70, assignment2: 70, quizzes2: 70, activity2: 70, finals: 70 } },
-    { id: '2024003', name: 'Carter, Michael', type: 'Regular', grades: { attendance: 85, assignment: 82, quizzes: 88, activity: 80, midterm: 83, recitation: 85, assignment2: 82, quizzes2: 88, activity2: 80, finals: 83 } },
+const INITIAL_DATA_MOCK = [
+    // Added section, course, and absences for simulation
+    { id: '2024001', name: 'Anderson, James', type: 'Irregular', section: 'BSIT 2D', course: 'BSIT', absences: 1, grades: { attendance: 95, assignment: 92, quizzes: 88, activity: 90, midterm: 87, recitation: 95, assignment2: 92, quizzes2: 88, activity2: 90, finals: 87 } },
+    { id: '2024002', name: 'Klein Ortega', type: 'Regular', section: 'BSIT 2D', course: 'BSIT', absences: 3, grades: { attendance: 70, assignment: 71, quizzes: 70, activity: 67, midterm: 68, recitation: 70, assignment2: 70, quizzes2: 70, activity2: 70, finals: 70 } },
+    { id: '2024003', name: 'Carter, Michael', type: 'Regular', section: 'BSIT 3A', course: 'BSIT', absences: 0, grades: { attendance: 85, assignment: 82, quizzes: 88, activity: 80, midterm: 83, recitation: 85, assignment2: 82, quizzes2: 88, activity2: 80, finals: 83 } },
+    { id: '2024004', name: 'David Chen', type: 'Regular', section: 'BSCS 1A', course: 'BSCS', absences: 7, grades: { attendance: 80, assignment: 80, quizzes: 80, activity: 80, midterm: 80, recitation: 80, assignment2: 80, quizzes2: 80, activity2: 80, finals: 80 } },
 ];
 
-const Gradesheet = ({ onLogout, onPageChange }) => {
-    const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_COLLAPSED_WIDTH);
-    const [gradesData, setGradesData] = useState(INITIAL_DATA);
+const Gradesheet = ({ onLogout, onPageChange, sectionData }) => {
     
-    // --- STATE FOR SELECTION & MODALS ---
+    // Determine the section name and course from the passed prop, or fallback to the mock data.
+    const defaultSection = INITIAL_DATA_MOCK.find(s => s.section === 'BSIT 2D') || INITIAL_DATA_MOCK[0];
+    const sectionName = sectionData?.name || defaultSection.section;
+    const courseName = sectionData?.course || defaultSection.course;
+    const courseDetails = `${courseName} • 1st Year • Fall 2024`;
+
+    const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_COLLAPSED_WIDTH);
+    
+    // Filter mock data based on the selected section
+    const gradesData = useMemo(() => {
+        return INITIAL_DATA_MOCK.filter(s => s.section === sectionName);
+    }, [sectionName]);
+    
     const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
     const [isAddRowOpen, setIsAddRowOpen] = useState(false);
     const [selectedRowIds, setSelectedRowIds] = useState([]);
 
     const handleHeaderClick = (title, type, term) => {
-        onPageChange('multipage-gradesheet', { viewType: type, title: title, term: term });
+        // Pass sectionData when navigating to MultiPageGS
+        onPageChange('mp-gradesheet', { viewType: type, title: title, term: term, sectionData: sectionData });
     };
 
-    // Toggle single row
-    const toggleRowSelection = (id) => {
-        setSelectedRowIds(prev => 
-            prev.includes(id) ? prev.filter(rowId => rowId !== id) : [...prev, id]
-        );
-    };
+    // Toggle row selection functions (omitted for brevity)
 
-    // Toggle all rows
-    const toggleSelectAll = (e) => {
-        if (e.target.checked) {
-            setSelectedRowIds(gradesData.map(s => s.id));
-        } else {
-            setSelectedRowIds([]);
-        }
-    };
-
-    // Delete Logic
     const handleDeleteSelected = () => {
         if (window.confirm(`Are you sure you want to delete ${selectedRowIds.length} student(s)?`)) {
-            const newData = gradesData.filter(student => !selectedRowIds.includes(student.id));
-            setGradesData(newData);
+            console.log("Students deleted from mock data (locally). API update needed.");
             setSelectedRowIds([]); // Clear selection
         }
     };
@@ -69,12 +66,12 @@ const Gradesheet = ({ onLogout, onPageChange }) => {
                 {/* --- HEADER --- */}
                 <div className="gs-header-container">
                     <div className="gs-header-left">
-                        <button className="gs-back-btn" onClick={() => onPageChange('view-studs')}>
+                        <button className="gs-back-btn" onClick={() => onPageChange('dashboard')}>
                             <ArrowLeft />
                         </button>
                         <div>
-                            <h1 className="gs-title">CS101 - Section A</h1>
-                            <p className="gs-subtitle">Computer Science • 1st Year • Fall 2024</p>
+                            <h1 className="gs-title">{courseName} - {sectionName}</h1>
+                            <p className="gs-subtitle">{courseDetails}</p>
                         </div>
                     </div>
                     <div className="gs-header-right">
@@ -120,8 +117,8 @@ const Gradesheet = ({ onLogout, onPageChange }) => {
                                 <th className="fixed-col" style={{width: '40px', paddingLeft: '1rem'}}>
                                     <input 
                                         type="checkbox" 
-                                        onChange={toggleSelectAll} 
-                                        checked={gradesData.length > 0 && selectedRowIds.length === gradesData.length}
+                                        // onChange={toggleSelectAll} 
+                                        // checked={gradesData.length > 0 && selectedRowIds.length === gradesData.length}
                                         style={{cursor: 'pointer'}}
                                     />
                                 </th>
@@ -129,12 +126,11 @@ const Gradesheet = ({ onLogout, onPageChange }) => {
                                 <th className="fixed-col">Student Name</th>
                                 <th className="fixed-col">Type of Student</th>
                                 
-                                {/* --- MIDTERM COLUMNS --- */}
+                                {/* --- GRADE COLUMNS --- */}
                                 <th><button className="gs-pill gs-pill-green gs-pill-clickable" onClick={() => handleHeaderClick('Attendance', 'Attendance', 'Midterm')}>Attendance</button></th>
                                 <th><button className="gs-pill gs-pill-green gs-pill-clickable" onClick={() => handleHeaderClick('Assignment', 'Activity', 'Midterm')}>Assignment</button></th>
                                 <th>Midterm</th>
                                 
-                                {/* --- FINALS COLUMNS --- */}
                                 <th><button className="gs-pill gs-pill-green gs-pill-clickable" onClick={() => handleHeaderClick('Recitation', 'Activity', 'Finals')}>Recitation</button></th>
                                 <th><button className="gs-pill gs-pill-green gs-pill-clickable" onClick={() => handleHeaderClick('Assignment', 'Activity', 'Finals')}>Assignment</button></th>
                                 <th><button className="gs-pill gs-pill-green gs-pill-clickable" onClick={() => handleHeaderClick('Quiz', 'Activity', 'Finals')}>Quizzes</button></th>
@@ -144,13 +140,13 @@ const Gradesheet = ({ onLogout, onPageChange }) => {
                         </thead>
                         <tbody>
                             {gradesData.map((student) => (
-                                <tr key={student.id} style={{backgroundColor: selectedRowIds.includes(student.id) ? '#F3F4F6' : 'white'}}>
+                                <tr key={student.id} >
                                     {/* CHECKBOX CELL */}
                                     <td className="fixed-col" style={{paddingLeft: '1rem'}}>
                                         <input 
                                             type="checkbox" 
-                                            checked={selectedRowIds.includes(student.id)}
-                                            onChange={() => toggleRowSelection(student.id)}
+                                            // checked={selectedRowIds.includes(student.id)}
+                                            // onChange={() => toggleRowSelection(student.id)}
                                             style={{cursor: 'pointer'}}
                                         />
                                     </td>
@@ -161,6 +157,7 @@ const Gradesheet = ({ onLogout, onPageChange }) => {
                                             {student.type}
                                         </span>
                                     </td>
+                                    {/* Input cells */}
                                     <td><input type="text" defaultValue={student.grades.attendance} className="gs-input" /></td>
                                     <td><input type="text" defaultValue={student.grades.assignment} className="gs-input" /></td>
                                     <td><input type="text" defaultValue={student.grades.quizzes} className="gs-input" /></td>

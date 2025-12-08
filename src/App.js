@@ -53,6 +53,51 @@ function App() {
     // --- SHARED STUDENTS STATE (LOAD FROM DATABASE) ---
     const [students, setStudents] = useState([]);
 
+    // ========== NEW: ATTENDANCE TRACKING FOR AT-RISK STUDENTS ==========
+    const [attendanceData, setAttendanceData] = useState({});
+    const [atRiskStudents, setAtRiskStudents] = useState({});
+    const [currentSectionContext, setCurrentSectionContext] = useState('');
+    const [selectedSection, setSelectedSection] = useState('CS 101 - A');
+
+    // Track at-risk students whenever attendance changes
+    useEffect(() => {
+        const atRiskMap = {};
+        
+        students.forEach(student => {
+            const studentAttendance = attendanceData[student.id] || [];
+            const absences = studentAttendance.filter(status => status === 'A').length;
+            
+            // If student has 3 or more absences, mark as at-risk
+            if (absences >= 3) {
+                // Use currentSectionContext to group students by the section they're viewing
+                const section = currentSectionContext || 'CS 101 - A';
+                
+                if (!atRiskMap[section]) {
+                    atRiskMap[section] = [];
+                }
+                atRiskMap[section].push({
+                    id: student.id,
+                    name: student.name,
+                    avatar: `https://i.pravatar.cc/150?u=${student.id}`,
+                    gpa: 2.1,
+                    attendance: Math.round((1 - absences/20) * 100) + '%',
+                    missed: absences,
+                    status: absences >= 10 ? 'High Risk' : 'Medium Risk'
+                });
+            }
+        });
+        
+        setAtRiskStudents(atRiskMap);
+        console.log('✅ At-Risk Students by Section:', atRiskMap);
+    }, [attendanceData, students, currentSectionContext]);
+
+    // Handler for attendance updates from MultiPageGS
+    const handleAttendanceUpdate = (updatedData) => {
+        setAttendanceData(updatedData);
+        console.log('📊 Attendance Updated:', updatedData);
+    };
+    // ========== END ATTENDANCE TRACKING ==========
+
     // --- NEW: AUTO-SYNC LISTENER ---
     useEffect(() => {
         const handleOnline = () => {
@@ -134,7 +179,7 @@ function App() {
                     
                     setIsDataReady(true);
                 } catch (error) {
-                    console.warn("⚠️  Offline Mode Detected during login.");
+                    console.warn("⚠️ Offline Mode Detected during login.");
                     setProfileData({ 
                         displayName: firebaseUser.displayName || 'Professor', 
                         email: firebaseUser.email, 
@@ -168,7 +213,20 @@ function App() {
 
     const handlePageChange = (page, params = {}) => { 
         setCurrentPage(page); 
-        setPageParams(params); 
+        setPageParams(params);
+        
+        // When navigating to multipage-gradesheet, save the section context
+        if (page === 'multipage-gradesheet' && params.sectionData) {
+            const sectionName = params.sectionData.name || params.sectionData.code || params.sectionData.title || params.title || 'Unknown Section';
+            setCurrentSectionContext(sectionName);
+            console.log('📍 Section Context Set:', sectionName);
+        }
+        
+        // When navigating to v-reports, save which section to display
+        if (page === 'v-reports' && params.section) {
+            setSelectedSection(params.section);
+            console.log('📂 Selected Section:', params.section);
+        }
     };
     
     const toggleVoice = (status) => setIsVoiceActive(status);
@@ -183,7 +241,6 @@ function App() {
     const renderMainContent = () => {
         if (isLoadingAuth || !profileData || !isDataReady) return <LoadingAnimation isDataReady={isDataReady} />;
 
-        // --- UPDATED: Passing isOnline to Dashboard ---
         const dashboardProps = {
             onLogout: handleLogout,
             onPageChange: handlePageChange,
@@ -192,7 +249,7 @@ function App() {
             onToggleVoice: () => toggleVoice(!isVoiceActive),
             sections: sections,
             students: students,
-            isOnline: isOnline // <--- PASSED HERE
+            isOnline: isOnline
         };
 
         const profileProps = {
@@ -208,7 +265,13 @@ function App() {
                 return <Gradesheet onLogout={handleLogout} onPageChange={handlePageChange} />;
             
             case 'multipage-gradesheet': 
-                return <MultiPageGS onLogout={handleLogout} onPageChange={handlePageChange} {...pageParams} />;
+                return <MultiPageGS 
+                    onLogout={handleLogout} 
+                    onPageChange={handlePageChange} 
+                    onAttendanceUpdate={handleAttendanceUpdate}
+                    students={students}
+                    {...pageParams} 
+                />;
             
             case 'view-studs': 
                 return <ViewStuds 
@@ -221,10 +284,19 @@ function App() {
                 />;
             
             case 'reports': 
-                return <ReportsLayout onLogout={handleLogout} onPageChange={handlePageChange} />;
+                return <ReportsLayout 
+                    onLogout={handleLogout} 
+                    onPageChange={handlePageChange} 
+                    atRiskStudents={atRiskStudents}
+                />;
             
             case 'v-reports': 
-                return <VReports onLogout={handleLogout} onPageChange={handlePageChange} />;
+                return <VReports 
+                    onLogout={handleLogout} 
+                    onPageChange={handlePageChange} 
+                    atRiskStudents={atRiskStudents[selectedSection] || []}
+                    sectionName={selectedSection}
+                />;
             
             case 'view-rd': 
                 return <ViewRD onLogout={handleLogout} onPageChange={handlePageChange} studentData={pageParams.student} />;
@@ -252,7 +324,6 @@ function App() {
                  <VoiceControl isVoiceActive={isVoiceActive} onToggle={toggleVoice} onPageChange={handlePageChange} />
                  {renderMainContent()}
                  
-                 {/* --- FIXED: PASSING REAL PROFESSOR UID TO CHATBOT --- */}
                  <CdmChatbot 
                     onPageChange={handlePageChange} 
                     professorUid={profileData?.id || profileData?.uid} 

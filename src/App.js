@@ -11,7 +11,6 @@ import MultiPageGS from './components/assets/Dashboard/MultiPageGS.jsx';
 import VReports from './components/assets/Reports/VReports.jsx'; 
 import ViewRD from './components/assets/Reports/ViewRD.jsx'; 
 import LoadingAnimation from './components/assets/LoadingAnimation/LoadingAnimation.jsx'; 
-import Tributes from './components/assets/Tributes/Tributes.jsx'; 
 import './App.css';
 
 // --- UPDATED IMPORT PATH FOR LANDING PAGE ---
@@ -329,8 +328,7 @@ function App() {
             case 'profile': 
                 return <ProfileLayout {...profileProps} />; 
             
-            case 'tributes': 
-                return <Tributes onLogout={handleLogout} onPageChange={handlePageChange} />;
+            // The case 'tributes' is now REMOVED
             
             case 'dashboard': 
             default: 
@@ -343,27 +341,27 @@ function App() {
         return (
              <div className="dashboard-container">
                  <div className={`status-bar ${!isOnline ? 'offline' : ''} ${isSyncing ? 'syncing' : ''}`}>
-                    {!isOnline && "📡 Offline Mode - Saving Locally"}
-                    {isSyncing && "☁️ Internet Restored - Syncing to Cloud..."}
-                 </div>
+                     {!isOnline && "📡 Offline Mode - Saving Locally"}
+                     {isSyncing && "☁️ Internet Restored - Syncing to Cloud..."}
+                   </div>
 
                  {/* LOGIC OVERLAY (Pass ref here) */}
                  <VoiceControl 
-                    ref={voiceRef} 
-                    isVoiceActive={isVoiceActive} 
-                    onToggle={setIsVoiceActive} 
-                    onPageChange={handlePageChange} 
-                 />
-                 
-                 {renderMainContent()}
-                 
+                     ref={voiceRef} 
+                     isVoiceActive={isVoiceActive} 
+                     onToggle={setIsVoiceActive} 
+                     onPageChange={handlePageChange} 
+                   />
+                   
+                   {renderMainContent()}
+                   
                  {/* CHATBOT (Pass handleGlobalSpeak) */}
                  <CdmChatbot 
-                    onPageChange={handlePageChange} 
-                    professorUid={profileData?.id || profileData?.uid} 
-                    onSpeak={handleGlobalSpeak}
-                 /> 
-             </div>
+                     onPageChange={handlePageChange} 
+                     professorUid={profileData?.id || profileData?.uid} 
+                     onSpeak={handleGlobalSpeak}
+                   /> 
+               </div>
         );
     } else {
         // --- SHOW LANDING PAGE FIRST, THEN LOGIN ---

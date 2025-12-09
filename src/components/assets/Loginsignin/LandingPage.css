@@ -1,0 +1,215 @@
+/* src/components/assets/Loginsignin/LandingPage.css */
+
+/* General Reset */
+.landing-container {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    overflow-x: hidden;
+    background-color: #f9fafb;
+    width: 100%;
+    position: absolute; /* Ensures it covers the screen if parent has padding */
+    top: 0;
+    left: 0;
+    z-index: 50; /* Higher than login wrapper if needed */
+}
+
+/* ANIMATION CLASSES */
+.animate-on-scroll {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s ease-out;
+}
+
+.animate-on-scroll.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* HERO SECTION */
+.hero-section {
+    height: 90vh;
+    background: linear-gradient(135deg, #1b4d3e 0%, #38761d 100%);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 5%;
+}
+
+.nav-logo {
+    height: 60px;
+}
+
+.nav-login-btn {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid white;
+    color: white;
+    padding: 0.5rem 1.5rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.nav-login-btn:hover {
+    background: white;
+    color: #1b4d3e;
+}
+
+.hero-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 0 20px;
+}
+
+.hero-content h1 {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+}
+
+.hero-content .highlight {
+    color: #a7f3d0;
+}
+
+.hero-content p {
+    font-size: 1.2rem;
+    max-width: 600px;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+}
+
+.cta-button {
+    background-color: #fbbf24;
+    color: #1b4d3e;
+    padding: 1rem 3rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    transition: transform 0.2s;
+}
+
+.cta-button:hover {
+    transform: scale(1.05);
+    background-color: #f59e0b;
+}
+
+/* FEATURES CAROUSEL */
+.features-section {
+    padding: 5rem 1rem;
+    text-align: center;
+    background-color: white;
+}
+
+.features-section h2 {
+    font-size: 2.5rem;
+    color: #1b4d3e;
+    margin-bottom: 3rem;
+}
+
+.carousel-window {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    overflow: hidden;
+    position: relative;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.carousel-track {
+    display: flex;
+    transition: transform 0.5s ease-in-out;
+}
+
+.carousel-card {
+    min-width: 100%;
+    background: #1b4d3e;
+    color: white;
+    padding: 3rem 2rem;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.carousel-card h3 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.carousel-indicators {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.dot {
+    width: 12px;
+    height: 12px;
+    background-color: #ccc;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.dot.active {
+    background-color: #1b4d3e;
+    transform: scale(1.2);
+}
+
+/* INFO SECTION */
+.info-section {
+    padding: 5rem 5%;
+    background-color: #ecfdf5;
+    text-align: center;
+    margin-top: 3rem;
+}
+
+.info-text h2 {
+    font-size: 2.5rem;
+    color: #064e3b;
+}
+
+.info-text p {
+    font-size: 1.1rem;
+    color: #065f46;
+    max-width: 700px;
+    margin: 1rem auto;
+}
+
+/* FOOTER */
+footer {
+    padding: 2rem;
+    background-color: #1f2937;
+    color: #9ca3af;
+    text-align: center;
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+    .hero-content h1 {
+        font-size: 2.5rem;
+    }
+    
+    .hero-section {
+        height: auto;
+        padding-bottom: 5rem;
+        clip-path: none;
+    }
+}

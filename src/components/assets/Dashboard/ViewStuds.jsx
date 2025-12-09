@@ -15,11 +15,14 @@ const XIcon = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" wid
 const EditIcon = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>);
 const UploadIcon = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>);
 const AlertCircle = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>);
+// --- ADDED BACK BUTTON ICON ---
+const ArrowLeft = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>);
 
 const ATTENDANCE_DATES = ['Sept 15', 'Sept 16', 'Sept 18', 'Sept 19', 'Sept 22', 'Sept 23', 'Sep 24', 'Sept 25'];
 
 // --- SUB-COMPONENT: ATTENDANCE CELL ---
 const AttendanceCell = ({ status, onChange }) => {
+// ... (AttendanceCell logic remains the same)
     let className = 'vs-status-pill';
     let content = status;
 
@@ -51,6 +54,7 @@ const AttendanceCell = ({ status, onChange }) => {
 
 // --- ADD STUDENT MODAL ---
 const AddStudentFormModal = ({ isOpen, onClose, onStudentAdded, sectionName, professorUid }) => { 
+// ... (AddStudentFormModal logic remains the same)
     const [formData, setFormData] = useState({
         id: '', name: '', type: 'Regular', course: '', 
         section: sectionName || '', cell: '', email: '', address: ''
@@ -79,7 +83,7 @@ const AddStudentFormModal = ({ isOpen, onClose, onStudentAdded, sectionName, pro
                 throw new Error('Student ID, Name, and Section are required');
             }
 
-            // Save to MongoDB
+            // Save to MongoDB (NOTE: This assumed backend call is kept for functionality)
             const response = await fetch('http://localhost:5000/api/students', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -195,9 +199,17 @@ const ViewStuds = ({ onLogout, onPageChange, sectionData, students = [], onRefre
             if (selected === 'Finals') displayTitle = 'Finals Grade';
             if (selected === 'Assignment') displayTitle = 'Assignments';
             
+            // NOTE: The previous version passed the selected view as viewType,
+            // which is correctly handled by MultiPageGS.jsx
             onPageChange('multipage-gradesheet', { 
-                viewType: selected, 
+                viewType: selected + ' Records', // e.g., 'Midterm Records'
                 title: displayTitle,
+                students: sectionStudents 
+            });
+        } else if (selected === 'Attendance') {
+             onPageChange('multipage-gradesheet', { 
+                viewType: 'Attendance', 
+                title: 'Attendance Record',
                 students: sectionStudents 
             });
         }
@@ -391,6 +403,16 @@ const ViewStuds = ({ onLogout, onPageChange, sectionData, students = [], onRefre
                     </div>
                 </header>
 
+                {/* --- BACK BUTTON (Updated to use the new pill design) --- */}
+                <button 
+                    className="vs-back-btn" 
+                    onClick={() => onPageChange('dashboard')} // Assumes 'dashboard' is the main section listing page
+                    title="Back to Dashboard"
+                >
+                    <ArrowLeft size={20} /> Back to Dashboard
+                </button>
+                {/* --- END BACK BUTTON --- */}
+
                 <div className="vs-content-card">
                     {viewOption === 'Student Information' && (
                         <div className="vs-card-header">
@@ -472,6 +494,43 @@ const ViewStuds = ({ onLogout, onPageChange, sectionData, students = [], onRefre
             />
             
             <style>{`
+                /* --- UPDATED BACK BUTTON DESIGN --- */
+                .vs-back-btn {
+                    /* New Button Look: Pill-shaped, light blue style */
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    padding: 8px 15px;
+                    margin: 0 0 10px 20px; /* Aligns with card content and provides separation */
+                    border-radius: 20px; /* Pill shape */
+                    font-size: 0.9rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    
+                    /* Design */
+                    background-color: #E0E7FF; /* Light blue/lavender */
+                    color: #3B82F6; /* Blue-500 text */
+                    border: 1px solid #C7D2FE; /* Lighter border */
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+                }
+
+                .vs-back-btn:hover {
+                    background-color: #C7D2FE; /* Darker hover background */
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+
+                .vs-back-btn:active {
+                    background-color: #A5B4FC;
+                }
+
+                .vs-back-btn svg {
+                    stroke-width: 2.5;
+                    width: 18px; /* Slightly smaller icon */
+                    height: 18px;
+                }
+                
+                /* EXISTING CSS BELOW */
                 .vs-export-dropdown-wrapper {
                     position: relative;
                     display: inline-block;
@@ -515,7 +574,8 @@ const ViewStuds = ({ onLogout, onPageChange, sectionData, students = [], onRefre
                     .vs-buttons-row,
                     .view-studs-layout > .sidebar,
                     .vs-legend,
-                    .vs-edit-btn {
+                    .vs-edit-btn,
+                    .vs-back-btn { /* Ensure it hides on print */
                         display: none !important;
                     }
                     .view-studs-main {

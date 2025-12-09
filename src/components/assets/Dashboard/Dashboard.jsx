@@ -263,29 +263,7 @@ const Dashboard = ({ onLogout, onPageChange, profileData, isVoiceActive, onToggl
                 <GreetingSection profileData={profileData} isOnline={isOnline} />
 
                 <div className="section-container" style={{ marginBottom: '2rem' }}>
-                    <div className="filters-bar" style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-                        <select className="select-filter" onChange={handleInstituteChange} value={filterInstitute || 'Select Institute'} style={{ padding: '0.5rem', border: '1px solid #D1D5DB', borderRadius: '6px', fontSize: '0.9rem' }}>
-                            <option disabled hidden>Select Institute</option>
-                            <option>Institute of Computer Studies</option>
-                            <option>Institute of Teachers Education</option>
-                            <option>Institute of Business Entrepreneurship</option>
-                        </select>
-
-                        <select className="select-filter" onChange={handleYearChange} value={filterYear || 'Select Year'} style={{ padding: '0.5rem', border: '1px solid #D1D5DB', borderRadius: '6px', fontSize: '0.9rem' }}>
-                            <option disabled hidden>Select Year</option>
-                            <option>1st Year</option>
-                            <option>2nd Year</option>
-                            <option>3rd Year</option>
-                            <option>4th Year</option>
-                        </select>
-
-                        <select className="select-filter" onChange={handleCourseChange} value={filterCourse || 'Select Course'} style={{ padding: '0.5rem', border: '1px solid #D1D5DB', borderRadius: '6px', fontSize: '0.9rem' }}>
-                            <option disabled hidden>Select Course</option>
-                            <option>BSIT</option>
-                            <option>BSEd</option>
-                            <option>BSBA</option>
-                        </select>
-                    </div>
+                   
 
                     <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1F2937', marginBottom: '0.5rem' }}>My Classes</h2>
                     <p style={{ color: '#6B7280', marginBottom: '1.5rem' }}>Manage your sections and track student progress</p>

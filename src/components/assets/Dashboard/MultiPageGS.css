@@ -79,6 +79,67 @@
     display: flex; align-items: center; gap: 0.4rem; cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 4px; height: 38px;
 }
 
+/* ADDED STYLES FOR REMOVE/RESTORE BUTTONS */
+.btn-remove-assessment,
+.btn-restore-assessment {
+    background: white; border: 1px solid #E5E7EB; font-size: 0.85rem; font-weight: 600; color: #4B5563;
+    display: flex; align-items: center; gap: 0.4rem; cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 4px; height: 38px;
+}
+
+/* DROPDOWN STYLES (Fixes Overlap) */
+.mp-remove-dropdown,
+.mp-restore-dropdown {
+    position: absolute; /* KEY FIX: Positions the menu relative to its parent container */
+    top: 100%;         /* KEY FIX: Puts the menu right below the button */
+    left: 0;           
+    z-index: 100;      /* Ensures it is on top of other content like the table */
+    background-color: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 8px 0;
+    margin-top: 4px; 
+    min-width: 250px;
+    max-height: 300px; 
+    overflow-y: auto;
+}
+
+/* DROPDOWN CONTENT STYLES */
+.mp-remove-header, .mp-restore-header {
+    font-weight: 700;
+    padding: 4px 12px;
+    margin-bottom: 4px;
+    color: #1F2937;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #F3F4F6;
+}
+
+.mp-remove-category, .mp-restore-category {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #10B981; /* A nice green color for visibility */
+    padding: 6px 12px 2px;
+    margin-top: 6px;
+    text-transform: uppercase;
+}
+
+.mp-remove-item, .mp-restore-item {
+    width: 100%;
+    text-align: left;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #374151;
+    display: block;
+}
+
+.mp-remove-item:hover, .mp-restore-item:hover {
+    background-color: #F3F4F6;
+}
+/* END OF NEW DROPDOWN STYLES */
+
 /* ATTENDANCE DROPDOWN STYLES */
 .mp-att-selector-wrapper {
     display: flex; flex-direction: column; gap: 2px;

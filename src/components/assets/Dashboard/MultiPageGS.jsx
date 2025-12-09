@@ -7,15 +7,16 @@ import { ActivityModal } from './ModalComponents';
 
 // --- ICONS ---
 const ArrowLeft = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>);
-const Filter = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>);
+const Filter = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>);
 const Download = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>);
 const Plus = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>);
 const Upload = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>);
 const Search = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>);
 const ChevronDown = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>);
+const Trash = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>);
+const RotateCcw = (props) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M23 14l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>);
 
 // --- INITIAL DATA STRUCTURES (Used for initial load only) ---
-// Note: Keeping initial max scores here, but they will be managed by state/localStorage
 const INITIAL_QUIZ_COLS = [
     { id: 'q1', label: 'Q1', max: 20 },
     { id: 'q2', label: 'Q2', max: 20 },
@@ -28,7 +29,6 @@ const INITIAL_ACT_COLS = [
     { id: 'act3', label: 'ACT 3', max: 50 },
     { id: 'act4', label: 'ACT 4', max: 50 }, 
 ];
-// Recitation and Exam columns are fixed in structure but their 'max' score will be dynamic state.
 const REC_COLS = [{ id: 'r1', label: 'R1' }]; 
 const EXAM_COLS = [{ id: 'exam', label: 'Major Exam' }]; 
 
@@ -41,7 +41,8 @@ const GRADES_STORAGE_KEY = 'progressTracker_studentScores_v1';
 const ATTENDANCE_STORAGE_KEY = 'progressTracker_attendanceData_v1';
 const QUIZ_COLS_KEY = 'progressTracker_quizCols_v1';
 const ACT_COLS_KEY = 'progressTracker_actCols_v1';
-// NEW KEYS FOR STATIC ASSESSMENT MAX SCORES (Editable)
+const REMOVED_QUIZ_COLS_KEY = 'progressTracker_removedQuizCols_v1'; // NEW KEY
+const REMOVED_ACT_COLS_KEY = 'progressTracker_removedActCols_v1'; // NEW KEY
 const REC_MAX_KEY = 'progressTracker_recMax_v1';
 const EXAM_MAX_KEY = 'progressTracker_examMax_v1';
 
@@ -88,16 +89,12 @@ const initializeScores = (students, currentQuizCols, currentActCols) => {
         const studentData = savedScores[student.id] || {}; // Start with saved data
 
         // Ensure all current columns have a key, defaulting to '' if not in saved data
-        // Quiz IDs (Shared)
         quizIds.forEach(id => { if (studentData[id] === undefined) studentData[id] = ''; });
+        actIds.forEach(id => { if (studentData[id] === undefined) studentData[id] = ''; }); 
+        labIds.forEach(id => { if (studentData[id.replace('act', 'lab')] === undefined) studentData[id.replace('act', 'lab')] = ''; }); // Labs/Assignments
         
-        // Midterm IDs
-        actIds.forEach(id => { if (studentData[id] === undefined) studentData[id] = ''; }); // Activities
         if (studentData['r1_mid'] === undefined) studentData['r1_mid'] = ''; // Recitation Midterm
         if (studentData['exam_mid'] === undefined) studentData['exam_mid'] = ''; // Exam Midterm
-        
-        // Finals IDs
-        labIds.forEach(id => { if (studentData[id] === undefined) studentData[id] = ''; }); // Labs/Assignments
         if (studentData['r1_fin'] === undefined) studentData['r1_fin'] = ''; // Recitation Finals
         if (studentData['exam_fin'] === undefined) studentData['exam_fin'] = ''; // Exam Finals
 
@@ -167,7 +164,6 @@ const calculateTermGrade = (scores, isMidterm, currentQuizCols, currentActCols, 
 
 
 const AttendanceCell = ({ status, onChange }) => {
-    // ... (AttendanceCell component remains unchanged)
     let className = 'mp-status-pill';
     let content = status;
     if (status === 'P') className += ' mp-p';
@@ -216,6 +212,14 @@ const MultiPageGS = ({ onLogout, onPageChange, viewType = 'Midterm Records', tit
     const [quizCols, setQuizCols] = useState(() => initializeCols(QUIZ_COLS_KEY, INITIAL_QUIZ_COLS));
     const [actCols, setActCols] = useState(() => initializeCols(ACT_COLS_KEY, INITIAL_ACT_COLS));
 
+    // NEW STATES FOR REMOVED COLUMNS (for restore functionality)
+    const [removedQuizCols, setRemovedQuizCols] = useState(() => initializeCols(REMOVED_QUIZ_COLS_KEY, []));
+    const [removedActCols, setRemovedActCols] = useState(() => initializeCols(REMOVED_ACT_COLS_KEY, []));
+
+    // STATE: TOGGLES FOR DROPDOWNS
+    const [isRemoveMenuOpen, setIsRemoveMenuOpen] = useState(false);
+    const [isRestoreMenuOpen, setIsRestoreMenuOpen] = useState(false); // NEW TOGGLE
+
     // STATES FOR STATIC ASSESSMENT MAX SCORES (Editable)
     const [recMax, setRecMax] = useState(() => initializeMaxScore(REC_MAX_KEY, 100));
     const [examMax, setExamMax] = useState(() => initializeMaxScore(EXAM_MAX_KEY, 60));
@@ -237,13 +241,17 @@ const MultiPageGS = ({ onLogout, onPageChange, viewType = 'Midterm Records', tit
     // Effects for column and max score persistence
     useEffect(() => { try { localStorage.setItem(QUIZ_COLS_KEY, JSON.stringify(quizCols)); } catch (e) { console.error("Could not save quiz columns to localStorage:", e); } }, [quizCols]);
     useEffect(() => { try { localStorage.setItem(ACT_COLS_KEY, JSON.stringify(actCols)); } catch (e) { console.error("Could not save activity columns to localStorage:", e); } }, [actCols]);
+    
+    // NEW: Effects for removed column persistence
+    useEffect(() => { try { localStorage.setItem(REMOVED_QUIZ_COLS_KEY, JSON.stringify(removedQuizCols)); } catch (e) { console.error("Could not save removed quiz columns to localStorage:", e); } }, [removedQuizCols]);
+    useEffect(() => { try { localStorage.setItem(REMOVED_ACT_COLS_KEY, JSON.stringify(removedActCols)); } catch (e) { console.error("Could not save removed activity columns to localStorage:", e); } }, [removedActCols]);
+    
     useEffect(() => { try { localStorage.setItem(REC_MAX_KEY, String(recMax)); } catch (e) { console.error("Could not save recMax to localStorage:", e); } }, [recMax]);
     useEffect(() => { try { localStorage.setItem(EXAM_MAX_KEY, String(examMax)); } catch (e) { console.error("Could not save examMax to localStorage:", e); } }, [examMax]);
 
 
     // Initialize/Re-initialize scores if the students list OR columns change
     useEffect(() => {
-        // This ensures new students or newly added columns are integrated with existing scores
         setStudentScores(prevScores => {
             return students.reduce((acc, student) => {
                 const studentData = prevScores[student.id] || {};
@@ -323,7 +331,77 @@ const MultiPageGS = ({ onLogout, onPageChange, viewType = 'Midterm Records', tit
     );
     // --- End Filtering Logic ---
 
-    // --- NEW: Add Column Handlers ---
+    // --- TOGGLE HANDLERS (for dropdown menus) ---
+    const toggleRemoveMenu = useCallback(() => {
+        setIsRemoveMenuOpen(prev => !prev);
+        if (!isRemoveMenuOpen) setIsRestoreMenuOpen(false); // Close restore menu when opening remove
+    }, [isRemoveMenuOpen]);
+
+    const toggleRestoreMenu = useCallback(() => {
+        setIsRestoreMenuOpen(prev => !prev);
+        if (!isRestoreMenuOpen) setIsRemoveMenuOpen(false); // Close remove menu when opening restore
+    }, [isRestoreMenuOpen]);
+
+
+    // --- UPDATE: Handle Remove Column (Moves to removed state) ---
+    const handleRemoveColumn = (type, id, label) => {
+        if (window.confirm(`Are you sure you want to remove ${label}? The scores in this column will be preserved for restoration.`)) {
+            if (type === 'quiz') {
+                setQuizCols(prevCols => {
+                    const colToRemove = prevCols.find(col => col.id === id);
+                    if (colToRemove) {
+                        setRemovedQuizCols(prevRemoved => [...prevRemoved, colToRemove]);
+                    }
+                    return prevCols.filter(col => col.id !== id);
+                });
+            } else if (type === 'act') {
+                setActCols(prevCols => {
+                    const colToRemove = prevCols.find(col => col.id === id);
+                    if (colToRemove) {
+                        setRemovedActCols(prevRemoved => [...prevRemoved, colToRemove]);
+                    }
+                    return prevCols.filter(col => col.id !== id);
+                });
+            }
+            setIsRemoveMenuOpen(false); // Close menu after selection
+        }
+    };
+
+    // --- NEW: Handle Restore Column (Moves from removed state back to active state) ---
+    const handleRestoreColumn = (type, id) => {
+        if (type === 'quiz') {
+            setRemovedQuizCols(prevRemoved => {
+                const colToRestore = prevRemoved.find(col => col.id === id);
+                if (colToRestore) {
+                    // Add back to quizCols, sort by label number
+                    setQuizCols(prevCols => [...prevCols, colToRestore].sort((a, b) => {
+                        const numA = parseInt(a.label.match(/\d+/)?.[0] || Infinity);
+                        const numB = parseInt(b.label.match(/\d+/)?.[0] || Infinity);
+                        return numA - numB;
+                    }));
+                }
+                // Remove from removed list
+                return prevRemoved.filter(col => col.id !== id);
+            });
+        } else if (type === 'act') {
+            setRemovedActCols(prevRemoved => {
+                const colToRestore = prevRemoved.find(col => col.id === id);
+                if (colToRestore) {
+                    // Add back to actCols, sort by label number
+                    setActCols(prevCols => [...prevCols, colToRestore].sort((a, b) => {
+                        const numA = parseInt(a.label.match(/\d+/)?.[0] || Infinity);
+                        const numB = parseInt(b.label.match(/\d+/)?.[0] || Infinity);
+                        return numA - numB;
+                    }));
+                }
+                // Remove from removed list
+                return prevRemoved.filter(col => col.id !== id);
+            });
+        }
+        setIsRestoreMenuOpen(false); // Close menu after selection
+    };
+
+    // --- NEW: Add Column Handlers (No change, just keeping for context) ---
     const handleAddAssessment = (assessmentType) => {
         let type;
         if (currentView.includes('Midterm')) {
@@ -334,38 +412,31 @@ const MultiPageGS = ({ onLogout, onPageChange, viewType = 'Midterm Records', tit
         
         if (type === 'quiz') {
             setQuizCols(prevCols => {
-                const newIndex = prevCols.length + 1;
-                const newId = `q${newIndex}`;
-                // Default max score for new Quiz is 20
+                // Use timestamp for unique ID to avoid conflicts if user deletes/adds
+                const newId = `q${Date.now()}`;
+                const newIndex = prevCols.length + 1 + removedQuizCols.length; // Approximate number
                 return [...prevCols, { id: newId, label: `Q${newIndex}`, max: 20 }];
             });
         } else if (type === 'activity') {
             setActCols(prevCols => {
-                const newIndex = prevCols.length + 1;
-                const newId = `act${newIndex}`;
-                // Default max score for new Activity/Lab is 50
+                const newId = `act${Date.now()}`;
+                const newIndex = prevCols.length + 1 + removedActCols.length; // Approximate number
                 return [...prevCols, { id: newId, label: `ACT ${newIndex}`, max: 50 }]; 
             });
         }
     };
-
-    // --- EXPORT FUNCTIONALITY (UPDATED to use filteredStudents) ---
+    
+    // ... (handleExport function remains unchanged as it relies on the state being correct)
     const handleExport = () => {
         let csvContent = '';
         let fileName = '';
-        // Use filtered students if a search term is active, otherwise use all students
         const studentsToExport = searchTerm ? filteredStudents : students; 
-
-        // ADDED: UTF-8 Byte Order Mark (BOM) for better Excel compatibility
         const BOM = "\ufeff"; 
 
         if (currentView === 'Gradesheet') {
+            // ... Gradesheet export logic (unchanged)
             fileName = 'Summary_Gradesheet.csv';
-            
-            // Define CSV Headers for Gradesheet
             csvContent += "Student ID,Student Name,Midterm,40%,Final,60%,FINAL GRADE,EQVT GRADE,REMARKS\n";
-            
-            // Map student data to CSV rows
             studentsToExport.forEach(student => {
                 const scores = studentScores[student.id] || {};
                 const midtermPercentage = calculateTermGrade(scores, true, quizCols, actCols, recMax, examMax); 
@@ -386,6 +457,7 @@ const MultiPageGS = ({ onLogout, onPageChange, viewType = 'Midterm Records', tit
             });
 
         } else if (currentView === 'Attendance') {
+            // ... Attendance export logic (unchanged)
             fileName = `${attendanceTerm.replace(/\s/g, '_')}_Record.csv`;
             const dates = attendanceTerm === 'Midterm Attendance' ? MIDTERM_DATES : FINALS_DATES;
             
@@ -406,6 +478,7 @@ const MultiPageGS = ({ onLogout, onPageChange, viewType = 'Midterm Records', tit
             });
             
         } else { // Midterm/Finals Records
+            // ... Records export logic (unchanged)
             const isMidterm = currentView.includes('Midterm');
             fileName = `${isMidterm ? 'Midterm' : 'Finals'}_Records.csv`;
             
@@ -447,9 +520,8 @@ const MultiPageGS = ({ onLogout, onPageChange, viewType = 'Midterm Records', tit
     };
 
 
-    // --- RENDERERS (UPDATED to use filteredStudents) ---
-    
-    // 1. Attendance Table
+    // --- RENDERERS (No change in rendering logic) ---
+    // ... (renderAttendanceTable remains unchanged)
     const renderAttendanceTable = () => {
         const isMidtermAtt = attendanceTerm === 'Midterm Attendance';
         const dates = isMidtermAtt ? MIDTERM_DATES : FINALS_DATES;
@@ -469,7 +541,6 @@ const MultiPageGS = ({ onLogout, onPageChange, viewType = 'Midterm Records', tit
                     </tr>
                 </thead>
                 <tbody>
-                    {/* Use filteredStudents */}
                     {filteredStudents.length === 0 ? (
                         <tr><td colSpan={dates.length + 5} style={{padding: '2rem', textAlign:'center'}}>No students found matching "{searchTerm}".</td></tr>
                     ) : (
@@ -511,7 +582,7 @@ const MultiPageGS = ({ onLogout, onPageChange, viewType = 'Midterm Records', tit
         );
     };
 
-    // 2. Summary Grade Sheet Table
+    // ... (renderGradesheetTable remains unchanged)
     const renderGradesheetTable = () => {
         return (
             <table className="mp-table mp-summary-table">
@@ -533,14 +604,12 @@ const MultiPageGS = ({ onLogout, onPageChange, viewType = 'Midterm Records', tit
                     </tr>
                 </thead>
                 <tbody>
-                    {/* Use filteredStudents */}
                     {filteredStudents.length === 0 ? (
                          <tr><td colSpan="9" style={{padding: '2rem', textAlign:'center'}}>No students found matching "{searchTerm}".</td></tr>
                     ) : (
                         filteredStudents.map((student, index) => {
                             const scores = studentScores[student.id] || {};
                             
-                            // Calculate Midterm and Finals Grades using the formula
                             const midtermPercentage = calculateTermGrade(scores, true, quizCols, actCols, recMax, examMax);
                             const finalsPercentage = calculateTermGrade(scores, false, quizCols, actCols, recMax, examMax);
 
@@ -584,15 +653,13 @@ const MultiPageGS = ({ onLogout, onPageChange, viewType = 'Midterm Records', tit
         );
     };
 
-    // 3. REGULAR RECORDS TABLE
+    // ... (renderRecordsTable remains unchanged)
     const renderRecordsTable = () => {
         const isMidterm = currentView.includes('Midterm');
         const examLabel = isMidterm ? 'Mid Exam' : 'Final Exam';
         
-        // Use dynamic columns from state
         const dynamicActCols = isMidterm ? actCols : actCols.map(c => ({...c, label: c.label.replace('ACT', 'LAB')}));
         
-        // Calculate colSpan for the "No students found" row
         const totalCols = 6 + quizCols.length + actCols.length;
 
         return (
@@ -671,7 +738,6 @@ const MultiPageGS = ({ onLogout, onPageChange, viewType = 'Midterm Records', tit
                 </thead>
                 
                 <tbody>
-                    {/* Use filteredStudents */}
                     {filteredStudents.length === 0 ? (
                         <tr><td colSpan={totalCols} style={{padding: '2rem', textAlign:'center'}}>No students found matching "{searchTerm}".</td></tr>
                     ) : (
@@ -766,8 +832,8 @@ const MultiPageGS = ({ onLogout, onPageChange, viewType = 'Midterm Records', tit
         return renderRecordsTable();
     };
 
+    // ... (renderSideCards remains unchanged)
     const renderSideCards = () => {
-        // Recalculate MAX points based on current dynamic columns
         const totalQuizMax = quizCols.reduce((sum, c) => sum + c.max, 0); 
         const totalActLabMax = actCols.reduce((sum, c) => sum + c.max, 0); 
         const totalRecMax = recMax; 
@@ -849,32 +915,50 @@ const MultiPageGS = ({ onLogout, onPageChange, viewType = 'Midterm Records', tit
 
             <main className="mp-main" style={{ marginLeft: sidebarWidth }}>
                 
-                {/* HEADER */}
+                {/* HEADER (UPDATED mp-header-center) */}
                 <div className="mp-header-top">
+                    
+                    {/* MODIFIED: mp-header-left now contains the back button next to the title */}
                     <div className="mp-header-left">
-                        <button className="mp-back-btn" onClick={() => onPageChange('view-studs')}><ArrowLeft /></button>
-                        <div style={{display: 'flex', flexDirection: 'column'}}>
-                            <h1 className="mp-top-title">
-                                {currentView === 'Gradesheet' ? 'SUMMARY GRADESHEET' : 
-                                 currentView === 'Attendance' ? 'ATTENDANCE RECORD' :
-                                 currentView.toUpperCase()}
-                            </h1>
-                            <p className="mp-top-subtitle">{sectionData?.subtitle || 'BSIT - 3D • Introduction to Programming'}</p>
+                        <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}> {/* NEW FLEX WRAPPER */}
+                            {/* BACK BUTTON (ICON ONLY) */}
+                            <button 
+                                className="mp-back-btn" 
+                                onClick={() => onPageChange('view-studs')}
+                                title="Go back to Student Records"
+                            >
+                                <ArrowLeft size={20} /> {/* ICON ONLY */}
+                            </button>
+                            
+                            {/* TITLE WRAPPER */}
+                            <div style={{display: 'flex', flexDirection: 'column'}}>
+                                <h1 className="mp-top-title">
+                                    {currentView === 'Gradesheet' ? 'SUMMARY GRADESHEET' : 
+                                     currentView === 'Attendance' ? 'ATTENDANCE RECORD' :
+                                     currentView.toUpperCase()}
+                                </h1>
+                                <p className="mp-top-subtitle">{sectionData?.subtitle || 'BSIT - 3D • Introduction to Programming'}</p>
+                            </div>
                         </div>
                     </div>
+
+                    {/* MODIFIED: mp-header-center now only contains the Search bar */}
                     <div className="mp-header-center">
-                        <div className="mp-search-wrapper">
-                            <Search className="mp-search-icon" size={16} />
-                            {/* ADDED: value and onChange handler */}
-                            <input 
-                                type="text" 
-                                placeholder="Search student..." 
-                                className="mp-search-input" 
-                                value={searchTerm}
-                                onChange={handleSearchChange}
-                            />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {/* EXISTING SEARCH WRAPPER */}
+                            <div className="mp-search-wrapper">
+                                <Search className="mp-search-icon" size={16} />
+                                <input 
+                                    type="text" 
+                                    placeholder="Search student..." 
+                                    className="mp-search-input" 
+                                    value={searchTerm}
+                                    onChange={handleSearchChange}
+                                />
+                            </div>
                         </div>
                     </div>
+
                     <div className="mp-header-right">
                         <div className="mp-view-selector-wrapper">
                             <select className="mp-view-selector" value={currentView} onChange={(e) => setCurrentView(e.target.value)}>
@@ -911,6 +995,126 @@ const MultiPageGS = ({ onLogout, onPageChange, viewType = 'Midterm Records', tit
                                 >
                                     <Plus size={18} /> Add {currentView.includes('Midterm') ? 'Activity' : 'Lab'}
                                 </button>
+
+                                {/* --- REMOVE BUTTON WITH DROPDOWN --- */}
+                                <div style={{position: 'relative', display: 'inline-block', marginLeft: '8px'}}>
+                                    <button 
+                                        className="btn-remove-assessment" 
+                                        onClick={toggleRemoveMenu} // Use toggle handler
+                                        title="Remove Assessment Column"
+                                    >
+                                        <Trash size={18} /> Remove
+                                    </button>
+
+                                    {/* DROPDOWN MENU */}
+                                    {isRemoveMenuOpen && (
+                                        <div className="mp-remove-dropdown">
+                                            <div className="mp-remove-header">Select Column to Remove</div>
+                                            
+                                            {/* QUIZ SECTION */}
+                                            {quizCols.length > 0 && (
+                                                <>
+                                                    <div className="mp-remove-category">Quizzes</div>
+                                                    {quizCols.map(col => (
+                                                        <button 
+                                                            key={col.id} 
+                                                            className="mp-remove-item"
+                                                            onClick={() => handleRemoveColumn('quiz', col.id, col.label)}
+                                                        >
+                                                            Remove {col.label}
+                                                        </button>
+                                                    ))}
+                                                </>
+                                            )}
+
+                                            {/* ACT SECTION */}
+                                            {actCols.length > 0 && (
+                                                <>
+                                                    <div className="mp-remove-category">{currentView.includes('Midterm') ? 'Activities' : 'Labs'}</div>
+                                                    {actCols.map(col => {
+                                                        const displayLabel = currentView.includes('Finals') 
+                                                            ? col.label.replace('ACT', 'LAB') 
+                                                            : col.label;
+                                                        
+                                                        return (
+                                                            <button 
+                                                                key={col.id} 
+                                                                className="mp-remove-item"
+                                                                onClick={() => handleRemoveColumn('act', col.id, displayLabel)}
+                                                            >
+                                                                Remove {displayLabel}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </>
+                                            )}
+
+                                            {quizCols.length === 0 && actCols.length === 0 && (
+                                                <div style={{padding: '10px', fontSize: '12px', color: '#666'}}>No columns to remove.</div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                {/* --- NEW RESTORE BUTTON WITH DROPDOWN --- */}
+                                <div style={{position: 'relative', display: 'inline-block', marginLeft: '8px'}}>
+                                    <button 
+                                        className="btn-restore-assessment" 
+                                        onClick={toggleRestoreMenu} // Use toggle handler
+                                        title="Restore Removed Column"
+                                    >
+                                        <RotateCcw size={18} /> Restore
+                                    </button>
+
+                                    {/* DROPDOWN MENU */}
+                                    {isRestoreMenuOpen && (
+                                        <div className="mp-restore-dropdown">
+                                            <div className="mp-restore-header">Select Column to Restore</div>
+                                            
+                                            {/* QUIZ SECTION */}
+                                            {removedQuizCols.length > 0 && (
+                                                <>
+                                                    <div className="mp-restore-category">Quizzes</div>
+                                                    {removedQuizCols.map(col => (
+                                                        <button 
+                                                            key={col.id} 
+                                                            className="mp-restore-item"
+                                                            onClick={() => handleRestoreColumn('quiz', col.id)}
+                                                        >
+                                                            Restore {col.label}
+                                                        </button>
+                                                    ))}
+                                                </>
+                                            )}
+
+                                            {/* ACT/LAB SECTION */}
+                                            {removedActCols.length > 0 && (
+                                                <>
+                                                    <div className="mp-restore-category">{currentView.includes('Midterm') ? 'Activities' : 'Labs'}</div>
+                                                    {removedActCols.map(col => {
+                                                        const displayLabel = currentView.includes('Finals') 
+                                                            ? col.label.replace('ACT', 'LAB') 
+                                                            : col.label;
+                                                        
+                                                        return (
+                                                            <button 
+                                                                key={col.id} 
+                                                                className="mp-restore-item"
+                                                                onClick={() => handleRestoreColumn('act', col.id)}
+                                                            >
+                                                                Restore {displayLabel}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </>
+                                            )}
+
+                                            {removedQuizCols.length === 0 && removedActCols.length === 0 && (
+                                                <div style={{padding: '10px', fontSize: '12px', color: '#666'}}>No columns available for restoration.</div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </>
                         )}
                         
@@ -952,6 +1156,43 @@ const MultiPageGS = ({ onLogout, onPageChange, viewType = 'Midterm Records', tit
             </main>
             {/* Keeping ActivityModal, though we are currently using direct buttons */}
             <ActivityModal isOpen={isActivityModalOpen} onClose={() => setIsActivityModalOpen(false)} title={currentView} />
+            
+            <style>{`
+                /* --- Back Button Design (Updated for Icon-Only in Header) --- */
+                .mp-back-btn {
+                    /* Icon-only, minimal look */
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 36px; /* Fixed width */
+                    height: 36px; /* Fixed height (making it square) */
+                    padding: 0; /* Remove padding */
+                    border-radius: 50%; /* Circular shape */
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    
+                    /* Design: Simple gray/white */
+                    background-color: transparent;
+                    color: #4B5563; /* Gray text/icon */
+                    border: none;
+                }
+
+                .mp-back-btn:hover {
+                    background-color: #F3F4F6; /* Light gray hover background */
+                    color: #1F2937; /* Darker icon color on hover */
+                    box-shadow: none; 
+                }
+
+                .mp-back-btn:active {
+                    background-color: #E5E7EB;
+                }
+
+                .mp-back-btn svg {
+                    stroke-width: 2.5;
+                    width: 20px; 
+                    height: 20px;
+                }
+            `}</style>
         </div>
     );
 };

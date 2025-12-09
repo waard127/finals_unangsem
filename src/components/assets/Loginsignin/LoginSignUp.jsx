@@ -1,6 +1,6 @@
 // src/components/assets/Loginsignin/LoginSignUp.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './LoginSignUp.css';
 import MyBackgroundImage from './cdmBack.png'; 
 import Cdm from './cdmm.png';
@@ -11,28 +11,77 @@ import {
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword,
     GoogleAuthProvider, 
-    signInWithPopup 
+    signInWithPopup,
+    sendPasswordResetEmail
 } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore'; 
 
 const LoginSignUp = ({ onLogin }) => { 
 
     const [isLoginView, setIsLoginView] = useState(true);
+    const [isResetView, setIsResetView] = useState(false); // Toggle for Forgot Password
     
     // Auth States
     const [email, setEmail] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     
+    // Reset Password States
+    const [resetMethod, setResetMethod] = useState('email'); // 'email' or 'sms'
+    const [resetAttempts, setResetAttempts] = useState(0);
+    const [isLockedOut, setIsLockedOut] = useState(false);
+    const [lockoutTimer, setLockoutTimer] = useState(0);
+
     // UI States
     const [error, setError] = useState('');
+    const [successMsg, setSuccessMsg] = useState('');
     const [loading, setLoading] = useState(false);
     
+    // --- SPAM PROTECTION LOGIC ---
+    useEffect(() => {
+        let timer;
+        if (isLockedOut && lockoutTimer > 0) {
+            timer = setInterval(() => {
+                setLockoutTimer((prev) => prev - 1);
+            }, 1000);
+        } else if (lockoutTimer === 0) {
+            setIsLockedOut(false);
+        }
+        return () => clearInterval(timer);
+    }, [isLockedOut, lockoutTimer]);
+
+    const checkSpamLimit = () => {
+        if (isLockedOut) return false;
+
+        // Thresholds
+        const SOFT_LIMIT = 3;
+        const HARD_LIMIT = 6;
+
+        const newAttempts = resetAttempts + 1;
+        setResetAttempts(newAttempts);
+
+        if (newAttempts >= HARD_LIMIT) {
+            setIsLockedOut(true);
+            setLockoutTimer(300); // 5 Minutes Hard Ban
+            setError('CRITICAL WARNING: Too many requests. Access blocked for 5 minutes.');
+            return false;
+        } else if (newAttempts >= SOFT_LIMIT) {
+            setIsLockedOut(true);
+            setLockoutTimer(30); // 30 Seconds Soft Ban
+            setError('Please slow down. You are sending requests too quickly.');
+            return false;
+        }
+        return true;
+    };
+
     // Function to clear states and switch the view (Login <-> Signup)
     const switchView = () => {
         setIsLoginView(!isLoginView);
+        setIsResetView(false);
         setError('');
+        setSuccessMsg('');
         setFullName('');
         setEmail('');
         setPassword('');
@@ -115,7 +164,7 @@ const LoginSignUp = ({ onLogin }) => {
                 uid: user.uid,
                 fullName: fullName,
                 email: email,
-                role: 'teacher', // Defaulting to teacher since we removed the toggle
+                role: 'teacher', 
                 createdAt: new Date()
             });
 
@@ -128,6 +177,41 @@ const LoginSignUp = ({ onLogin }) => {
             } else {
                  setError(firebaseError.message);
             }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // --- LOGIC FOR PASSWORD RESET (EMAIL & SMS) ---
+    const handlePasswordReset = async (e) => {
+        e.preventDefault();
+        setError('');
+        setSuccessMsg('');
+
+        // 1. Check Spam Limits
+        if (!checkSpamLimit()) return;
+
+        setLoading(true);
+
+        try {
+            if (resetMethod === 'email') {
+                if (!email) throw new Error("Please enter your email address.");
+                
+                await sendPasswordResetEmail(auth, email);
+                setSuccessMsg(`Reset link sent to ${email}. Check your inbox or spam folder.`);
+            } 
+            else if (resetMethod === 'sms') {
+                if (!phoneNumber) throw new Error("Please enter your mobile number.");
+                
+                // NOTE: Actual SMS sending requires a backend (e.g., Twilio) or Firebase Phone Auth integration.
+                // This is a simulation of the successful UI flow.
+                await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
+                console.log(`Simulating SMS send to ${phoneNumber}`);
+                
+                setSuccessMsg(`OTP Code sent to ${phoneNumber}. (SMS Feature requires backend integration)`);
+            }
+        } catch (err) {
+            setError(err.message.replace('Firebase:', '').trim());
         } finally {
             setLoading(false);
         }
@@ -150,16 +234,95 @@ const LoginSignUp = ({ onLogin }) => {
                 </div>
 
                 {/* Auth Form Card */}
-                <div className="login-card">
+                <div className={`login-card ${isLockedOut ? 'shaking-warning' : ''}`}>
                     
-                    <h2>{isLoginView ? 'Professor Portal' : 'Create Account'}</h2>
+                    {/* Header Text Logic */}
+                    <h2>
+                        {isResetView ? 'Reset Password' : (isLoginView ? 'Professor Portal' : 'Create Account')}
+                    </h2>
                     
-                    <p style={{marginBottom: '2rem'}}>
-                        {isLoginView 
-                            ? 'Welcome back! Please login to access your dashboard.' 
-                            : 'Join us and track your student progress'}
+                    <p style={{marginBottom: '1.5rem'}}>
+                        {isResetView 
+                            ? 'Recover your account access safely.'
+                            : (isLoginView 
+                                ? 'Welcome back! Please login to access your dashboard.' 
+                                : 'Join us and track your student progress')}
                     </p>
 
+                    {/* --- VIEW 1: PASSWORD RESET FORM --- */}
+                    {isResetView ? (
+                        <form onSubmit={handlePasswordReset}>
+                            
+                            {/* Reset Method Toggles */}
+                            <div className="reset-toggles">
+                                <button 
+                                    type="button" 
+                                    className={resetMethod === 'email' ? 'active' : ''}
+                                    onClick={() => {setResetMethod('email'); setError(''); setSuccessMsg('');}}
+                                >
+                                    Via Email
+                                </button>
+                                <button 
+                                    type="button" 
+                                    className={resetMethod === 'sms' ? 'active' : ''}
+                                    onClick={() => {setResetMethod('sms'); setError(''); setSuccessMsg('');}}
+                                >
+                                    Via SMS
+                                </button>
+                            </div>
+
+                            {resetMethod === 'email' ? (
+                                <div className="form-group">
+                                    <label htmlFor="resetEmail">Email Address</label>
+                                    <input
+                                        type="email"
+                                        id="resetEmail"
+                                        placeholder="Enter your registered email"
+                                        value={email} 
+                                        onChange={(e) => setEmail(e.target.value)} 
+                                    />
+                                </div>
+                            ) : (
+                                <div className="form-group">
+                                    <label htmlFor="resetPhone">Mobile Number</label>
+                                    <input
+                                        type="tel"
+                                        id="resetPhone"
+                                        placeholder="+63 900 000 0000"
+                                        value={phoneNumber} 
+                                        onChange={(e) => setPhoneNumber(e.target.value)} 
+                                    />
+                                </div>
+                            )}
+
+                            {/* LOCKOUT COUNTER */}
+                            {isLockedOut && (
+                                <div className="lockout-timer">
+                                    Please wait {lockoutTimer}s before trying again.
+                                </div>
+                            )}
+
+                            {/* MESSAGES */}
+                            {error && <div className="error-message">{error}</div>}
+                            {successMsg && <div className="success-message">{successMsg}</div>}
+
+                            <button type="submit" className="login-btn" disabled={loading || isLockedOut}>
+                                {loading ? 'Sending...' : 'Send Reset Code'}
+                            </button>
+
+                            <div className="signup-area">
+                                <button 
+                                    type="button"
+                                    onClick={() => { setIsResetView(false); setError(''); setSuccessMsg(''); }}
+                                    style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', textDecoration: 'underline' }}
+                                >
+                                    Back to Login
+                                </button>
+                            </div>
+                        </form>
+                    ) : (
+                        
+                    /* --- VIEW 2: LOGIN & SIGNUP FORMS --- */
                     <form onSubmit={isLoginView ? handleLogin : handleSignUp}> 
 
                         {/* FULL NAME (Sign Up Only) */}
@@ -231,7 +394,13 @@ const LoginSignUp = ({ onLogin }) => {
                         {isLoginView && (
                             <div className="options-row" style={{justifyContent: 'flex-end'}}>
                                 <div className="forgot-password">
-                                    <a href="#forgot">Forgot password?</a>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => { setIsResetView(true); setError(''); }}
+                                        style={{background: 'none', border:'none', color:'#3B82F6', cursor:'pointer', padding:0, fontWeight: 500}}
+                                    >
+                                        Forgot password?
+                                    </button>
                                 </div>
                             </div>
                         )}
@@ -254,27 +423,30 @@ const LoginSignUp = ({ onLogin }) => {
                              Sign in with Google
                         </button>
                     </form>
+                    )}
 
-                    {/* SWITCH VIEW BUTTON */}
-                    <div className="signup-area">
-                        <p>{isLoginView ? "Don't have an account?" : "Already have an account?"}</p>
-                        <button 
-                             onClick={switchView}
-                             style={{ 
-                                 background: 'none', 
-                                 border: 'none', 
-                                 color: '#007bff', 
-                                 fontWeight: 'bold', 
-                                 cursor: 'pointer', 
-                                 textDecoration: 'underline',
-                                 fontSize: '0.9rem',
-                                 padding: '0',
-                                 marginLeft: '5px'
-                             }}
-                        >
-                             {isLoginView ? 'Sign up' : 'Login here'}
-                        </button>
-                    </div>
+                    {/* SWITCH VIEW BUTTON (Hidden during Reset Mode) */}
+                    {!isResetView && (
+                        <div className="signup-area">
+                            <p>{isLoginView ? "Don't have an account?" : "Already have an account?"}</p>
+                            <button 
+                                 onClick={switchView}
+                                 style={{ 
+                                     background: 'none', 
+                                     border: 'none', 
+                                     color: '#007bff', 
+                                     fontWeight: 'bold', 
+                                     cursor: 'pointer', 
+                                     textDecoration: 'underline',
+                                     fontSize: '0.9rem',
+                                     padding: '0',
+                                     marginLeft: '5px'
+                                 }}
+                            >
+                                 {isLoginView ? 'Sign up' : 'Login here'}
+                            </button>
+                        </div>
+                    )}
                 </div>
            </div>
        </div>

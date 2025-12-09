@@ -14,6 +14,9 @@ import LoadingAnimation from './components/assets/LoadingAnimation/LoadingAnimat
 import Tributes from './components/assets/Tributes/Tributes.jsx'; 
 import './App.css';
 
+// --- UPDATED IMPORT PATH FOR LANDING PAGE ---
+import LandingPage from './components/assets/Loginsignin/LandingPage.jsx'; 
+
 import VoiceControl from './components/assets/Dashboard/VoiceControl.jsx';
 import { auth } from './apiService'; 
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth'; 
@@ -24,6 +27,10 @@ const { APP_VERSION, BUILD_HASH, BUILD_DATE } = meta;
 
 function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    
+    // --- STATE: Controls if Landing Page is visible ---
+    const [showLanding, setShowLanding] = useState(true);
+
     const [currentPage, setCurrentPage] = useState('dashboard'); 
     const [pageParams, setPageParams] = useState({}); 
 
@@ -33,7 +40,7 @@ function App() {
     
     // --- GLOBAL VOICE STATE ---
     const [isVoiceActive, setIsVoiceActive] = useState(false);
-    // NEW: Ref to access the VoiceControl's speak function
+    // Ref to access the VoiceControl's speak function
     const voiceRef = useRef(null);
 
     const handleGlobalSpeak = (text) => {
@@ -46,7 +53,7 @@ function App() {
         setIsVoiceActive(prev => !prev);
     };
 
-    // --- NEW: OFFLINE/SYNC STATUS ---
+    // --- OFFLINE/SYNC STATUS ---
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [isSyncing, setIsSyncing] = useState(false);
 
@@ -67,7 +74,7 @@ function App() {
     // --- SHARED STUDENTS STATE (LOAD FROM DATABASE) ---
     const [students, setStudents] = useState([]);
 
-    // ========== NEW: ATTENDANCE TRACKING FOR AT-RISK STUDENTS ==========
+    // ========== ATTENDANCE TRACKING FOR AT-RISK STUDENTS ==========
     const [attendanceData, setAttendanceData] = useState({});
     const [atRiskStudents, setAtRiskStudents] = useState({});
     const [currentSectionContext, setCurrentSectionContext] = useState('');
@@ -110,7 +117,7 @@ function App() {
     };
     // ========== END ATTENDANCE TRACKING ==========
 
-    // --- NEW: AUTO-SYNC LISTENER ---
+    // --- AUTO-SYNC LISTENER ---
     useEffect(() => {
         const handleOnline = () => {
             setIsOnline(true);
@@ -131,7 +138,7 @@ function App() {
         setIsSyncing(true);
         try {
             const res = await fetch('http://localhost:5000/api/sync-now', { method: 'POST' });
-            const data = await res.json();
+            await res.json();
         } catch (e) {
             console.error("Sync Failed:", e);
         } finally {
@@ -167,6 +174,7 @@ function App() {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
                 setIsLoggedIn(true);
+                setShowLanding(false); // Hide landing page if user is already logged in
                 try {
                     const response = await fetch('http://localhost:5000/api/user-sync', {
                         method: 'POST',
@@ -214,6 +222,7 @@ function App() {
             setIsLoggedIn(false); 
             setIsVoiceActive(false);
             setStudents([]);
+            setShowLanding(true); // Return to Landing Page on Logout
         } catch (error) {
             console.error('Logout error:', error);
         }
@@ -329,6 +338,7 @@ function App() {
         }
     };
 
+    // --- MAIN RENDER LOGIC ---
     if (isLoggedIn) {
         return (
              <div className="dashboard-container">
@@ -356,6 +366,11 @@ function App() {
              </div>
         );
     } else {
+        // --- SHOW LANDING PAGE FIRST, THEN LOGIN ---
+        if (showLanding) {
+            return <LandingPage onGetStarted={() => setShowLanding(false)} />;
+        }
+        
         return <div className="login-page-container"><LoginSignUp onLogin={()=>{}} /></div>;
     }
 }
